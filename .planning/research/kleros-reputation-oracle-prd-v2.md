@@ -1,7 +1,7 @@
 ---
 date: 2026-03-13
-updated: 2026-03-13
-version: "2.0"
+updated: 2026-03-24
+version: "2.1"
 topic: "Kleros Reputation Oracle for ERC-8004 — Product Requirements Document v2"
 tags: [kleros, erc-8004, reputation, pgtcr, oracle, solidity, sepolia, poc]
 status: complete
@@ -1858,6 +1858,7 @@ Every feedback submission includes an IPFS-pinned evidence file. The schema foll
 
 ```json
 {
+  "schema": "kleros-reputation-oracle/v1",
   "agentRegistry": "eip155:11155111:0x8004A818BFB912233c491871b3d84c89A494BD9e",
   "agentId": 1436,
   "clientAddress": "eip155:11155111:0xROUTER_ADDRESS_HERE",
@@ -1866,6 +1867,9 @@ Every feedback submission includes an IPFS-pinned evidence file. The schema foll
   "valueDecimals": 0,
   "tag1": "curate-verified",
   "tag2": "kleros-agent-registry",
+  "endpoint": "erc8004://feedback",
+  "title": "PGTCR collateralization verified",
+  "text": "Agent 1436 is actively collateralized in Kleros PGTCR (0x3162...0447) on Sepolia with 0.002 WETH staked. No disputes filed.",
   "kleros": {
     "pgtcrAddress": "0x3162df9669affa8b6b6ff2147afa052249f00447",
     "pgtcrItemId": "0xITEM_ID_BYTES32",
@@ -1882,6 +1886,7 @@ Every feedback submission includes an IPFS-pinned evidence file. The schema foll
 
 ```json
 {
+  "schema": "kleros-reputation-oracle/v1",
   "agentRegistry": "eip155:11155111:0x8004A818BFB912233c491871b3d84c89A494BD9e",
   "agentId": 1436,
   "clientAddress": "eip155:11155111:0xROUTER_ADDRESS_HERE",
@@ -1890,6 +1895,9 @@ Every feedback submission includes an IPFS-pinned evidence file. The schema foll
   "valueDecimals": 0,
   "tag1": "curate-removed",
   "tag2": "kleros-agent-registry",
+  "endpoint": "erc8004://feedback",
+  "title": "Agent removed by Kleros dispute",
+  "text": "Agent 1436 was removed from Kleros PGTCR (0x3162...0447) on Sepolia after dispute #1234. Challenger prevailed (ruling: 2).",
   "kleros": {
     "pgtcrAddress": "0x3162df9669affa8b6b6ff2147afa052249f00447",
     "pgtcrItemId": "0xITEM_ID_BYTES32",
@@ -1910,6 +1918,7 @@ Every feedback submission includes an IPFS-pinned evidence file. The schema foll
 
 | Field | Type | Description |
 |---|---|---|
+| `schema` | string | Versioned payload format identifier (`"kleros-reputation-oracle/v1"`). Enables consumers to parse evidence without guessing the structure. |
 | `agentRegistry` | string | CAIP-10 identifier for the 8004 IdentityRegistry on Ethereum Sepolia. |
 | `agentId` | number | The 8004 agent ID this feedback is about. |
 | `clientAddress` | string | CAIP-10 identifier for the Router contract (the `msg.sender` of `giveFeedback`). |
@@ -1918,6 +1927,9 @@ Every feedback submission includes an IPFS-pinned evidence file. The schema foll
 | `valueDecimals` | number | Always 0 (integer values). |
 | `tag1` | string | `"curate-verified"` or `"curate-removed"`. |
 | `tag2` | string | `"kleros-agent-registry"` (identifies the specific PGTCR list). |
+| `endpoint` | string | Mirrors the on-chain `endpoint` parameter of `submitFeedback`. Use `"erc8004://feedback"`. |
+| `title` | string | Short human-readable summary of the feedback event. |
+| `text` | string | Longer human-readable explanation with contextual details (agent ID, PGTCR address, stake, dispute outcome). |
 | `kleros.pgtcrAddress` | string | Address of the PGTCR contract. |
 | `kleros.pgtcrItemId` | string | Bytes32 item ID in the PGTCR. |
 | `kleros.stakeAmount` | string | Human-readable stake amount (e.g., `"0.002"`). |
@@ -2171,6 +2183,7 @@ kleros-reputation-oracle/
 | **GraphQL Client** | graphql-request | ^6.0 | For subgraph queries |
 | **IPFS Pinning** | Pinata (@pinata/sdk) | latest | |
 | **Testing** | Foundry (forge test) | — | Contracts |
+| **Linting/Formatting** | Biome.js | latest | Replaces ESLint + Prettier |
 | **Testing** | vitest or jest | latest | Bot unit tests |
 | **Target Chain** | Ethereum Sepolia | chainId: 11155111 | POC |
 | **Production Chain** | TBD (Arbitrum One likely) | — | Future |
