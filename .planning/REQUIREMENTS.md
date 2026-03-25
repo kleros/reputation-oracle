@@ -7,15 +7,15 @@
 
 ### Router Contract
 
-- [ ] **ROUT-01**: Router deployed on Sepolia as UUPS proxy with storage gaps for future upgrades
-- [ ] **ROUT-02**: Router stores feedback state per agentId (`hasFeedback`, `feedbackIndex`)
-- [ ] **ROUT-03**: Scenario 1 — `submitPositiveFeedback(agentId, pgtcrItemId, feedbackURI)` calls `giveFeedback(agentId, 95, 0, "verified", "kleros-agent-registry", "", feedbackURI, 0x0)` and reverts if feedback already exists
-- [ ] **ROUT-04**: Scenario 2 — `submitNegativeFeedback(agentId, feedbackURI)` revokes existing positive feedback then calls `giveFeedback(agentId, -95, 0, "removed", "kleros-agent-registry", "", feedbackURI, 0x0)`
-- [ ] **ROUT-05**: Scenario 3 — `revokeOnly(agentId)` revokes existing feedback without submitting new feedback
-- [ ] **ROUT-06**: Bot authorization — only addresses with `authorizedBots[msg.sender] == true` can call feedback functions
-- [ ] **ROUT-07**: Owner can add/remove authorized bot addresses and transfer ownership
-- [ ] **ROUT-08**: Router emits events for all state changes (PositiveFeedbackSubmitted, NegativeFeedbackSubmitted, FeedbackRevoked, BotAuthorizationChanged)
-- [ ] **ROUT-09**: Feedback values (±95), decimals (0), and tags ("verified"/"removed", "kleros-agent-registry") are constants in the contract
+- [x] **ROUT-01**: Router deployed on Sepolia as UUPS proxy with storage gaps for future upgrades
+- [x] **ROUT-02**: Router stores feedback state per agentId (`hasFeedback`, `feedbackIndex`)
+- [x] **ROUT-03**: Scenario 1 — `submitPositiveFeedback(agentId, pgtcrItemId, feedbackURI)` calls `giveFeedback(agentId, 95, 0, "verified", "kleros-agent-registry", "", feedbackURI, 0x0)` and reverts if feedback already exists
+- [x] **ROUT-04**: Scenario 2 — `submitNegativeFeedback(agentId, feedbackURI)` revokes existing positive feedback then calls `giveFeedback(agentId, -95, 0, "removed", "kleros-agent-registry", "", feedbackURI, 0x0)`
+- [x] **ROUT-05**: Scenario 3 — `revokeOnly(agentId)` revokes existing feedback without submitting new feedback
+- [x] **ROUT-06**: Bot authorization — only addresses with `authorizedBots[msg.sender] == true` can call feedback functions
+- [x] **ROUT-07**: Owner can add/remove authorized bot addresses and transfer ownership
+- [x] **ROUT-08**: Router emits events for all state changes (PositiveFeedbackSubmitted, NegativeFeedbackSubmitted, FeedbackRevoked, BotAuthorizationChanged)
+- [x] **ROUT-09**: Feedback values (±95), decimals (0), and tags ("verified"/"removed", "kleros-agent-registry") are constants in the contract
 - [ ] **ROUT-10**: All Router functions pass forge test suite including edge cases (double submission, revoke without feedback, re-registration after dispute)
 
 ### Bot Core
@@ -32,10 +32,10 @@
 
 ### Identity & Setup
 
-- [ ] **SETUP-01**: Foundry deploy script deploys Router as UUPS proxy on Sepolia
-- [ ] **SETUP-02**: Foundry script registers Kleros as an 8004 agent on IdentityRegistry with oracle service metadata
-- [ ] **SETUP-03**: Foundry script configures Router with `klerosAgentId`, `reputationRegistry`, `identityRegistry` addresses
-- [ ] **SETUP-04**: Foundry script authorizes bot address on Router
+- [x] **SETUP-01**: Foundry deploy script deploys Router as UUPS proxy on Sepolia
+- [x] **SETUP-02**: Foundry script registers Kleros as an 8004 agent on IdentityRegistry with oracle service metadata
+- [x] **SETUP-03**: Foundry script configures Router with `klerosAgentId`, `reputationRegistry`, `identityRegistry` addresses
+- [x] **SETUP-04**: Foundry script authorizes bot address on Router
 
 ### Verification
 
@@ -84,15 +84,15 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ROUT-01 | Phase 1 | Pending |
-| ROUT-02 | Phase 1 | Pending |
-| ROUT-03 | Phase 1 | Pending |
-| ROUT-04 | Phase 1 | Pending |
-| ROUT-05 | Phase 1 | Pending |
-| ROUT-06 | Phase 1 | Pending |
-| ROUT-07 | Phase 1 | Pending |
-| ROUT-08 | Phase 1 | Pending |
-| ROUT-09 | Phase 1 | Pending |
+| ROUT-01 | Phase 1 | Complete |
+| ROUT-02 | Phase 1 | Complete |
+| ROUT-03 | Phase 1 | Complete |
+| ROUT-04 | Phase 1 | Complete |
+| ROUT-05 | Phase 1 | Complete |
+| ROUT-06 | Phase 1 | Complete |
+| ROUT-07 | Phase 1 | Complete |
+| ROUT-08 | Phase 1 | Complete |
+| ROUT-09 | Phase 1 | Complete |
 | ROUT-10 | Phase 1 | Pending |
 | BOT-01 | Phase 2 | Pending |
 | BOT-02 | Phase 2 | Pending |
@@ -103,10 +103,10 @@
 | BOT-07 | Phase 2 | Pending |
 | BOT-08 | Phase 2 | Pending |
 | BOT-09 | Phase 2 | Pending |
-| SETUP-01 | Phase 1 | Pending |
-| SETUP-02 | Phase 1 | Pending |
-| SETUP-03 | Phase 1 | Pending |
-| SETUP-04 | Phase 1 | Pending |
+| SETUP-01 | Phase 1 | Complete |
+| SETUP-02 | Phase 1 | Complete |
+| SETUP-03 | Phase 1 | Complete |
+| SETUP-04 | Phase 1 | Complete |
 | VER-01 | Phase 3 | Pending |
 | VER-02 | Phase 3 | Pending |
 | VER-03 | Phase 3 | Pending |

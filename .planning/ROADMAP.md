@@ -31,7 +31,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 3 plans
 
 Plans:
-- [ ] 01-01-PLAN.md -- Foundry scaffold, ERC-8004 interfaces, Router contract implementation (ROUT-01 through ROUT-09)
+- [x] 01-01-PLAN.md -- Foundry scaffold, ERC-8004 interfaces, Router contract implementation (ROUT-01 through ROUT-09)
 - [ ] 01-02-PLAN.md -- Fork test suite covering all 3 scenarios and edge cases (ROUT-10)
 - [ ] 01-03-PLAN.md -- Idempotent deploy script with identity registration and bot authorization (SETUP-01 through SETUP-04)
 
@@ -72,6 +72,6 @@ Phases execute in numeric order: 1 -> 2 -> 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Router Contract & On-Chain Setup | 0/3 | Planned | - |
+| 1. Router Contract & On-Chain Setup | 1/3 | In Progress|  |
 | 2. Stateless Bot | 0/2 | Not started | - |
 | 3. End-to-End Verification | 0/1 | Not started | - |
