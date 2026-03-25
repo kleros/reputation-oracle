@@ -28,11 +28,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Calling `submitNegativeFeedback` revokes the prior positive and creates a -95 entry (not an average of +95 and -95)
   4. Calling `revokeOnly` removes existing feedback without creating new entries
   5. Kleros is registered as an 8004 agent and the Router is configured with the correct klerosAgentId, registry addresses, and authorized bot
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 01-01: TBD
-- [ ] 01-02: TBD
+- [ ] 01-01-PLAN.md -- Foundry scaffold, ERC-8004 interfaces, Router contract implementation (ROUT-01 through ROUT-09)
+- [ ] 01-02-PLAN.md -- Fork test suite covering all 3 scenarios and edge cases (ROUT-10)
+- [ ] 01-03-PLAN.md -- Idempotent deploy script with identity registration and bot authorization (SETUP-01 through SETUP-04)
 
 ### Phase 2: Stateless Bot
 **Goal**: A one-shot TypeScript bot reads PGTCR subgraph state and Router on-chain state, computes the minimum set of reconciliation actions, and executes them against the deployed Router
@@ -71,6 +72,6 @@ Phases execute in numeric order: 1 -> 2 -> 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Router Contract & On-Chain Setup | 0/2 | Not started | - |
+| 1. Router Contract & On-Chain Setup | 0/3 | Planned | - |
 | 2. Stateless Bot | 0/2 | Not started | - |
 | 3. End-to-End Verification | 0/1 | Not started | - |
