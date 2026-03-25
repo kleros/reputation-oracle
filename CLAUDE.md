@@ -19,8 +19,8 @@ Router is the `clientAddress` for 8004 ReputationRegistry. Bot NEVER calls Reput
 
 | # | Trigger | Router calls |
 |---|---------|--------------|
-| 1 | Item Submitted/Reincluded, no feedback yet | `giveFeedback(agentId, 95, 0, "curate-verified", "kleros-agent-registry", "", ipfsCID, 0x0)` |
-| 2 | Item Absent + disputeOutcome=Reject, has feedback | `revokeFeedback(oldIndex)` then `giveFeedback(agentId, -95, 0, "curate-removed", ...)` |
+| 1 | Item Submitted/Reincluded, no feedback yet | `giveFeedback(agentId, 95, 0, "verified", "kleros-agent-registry", "", ipfsCID, 0x0)` |
+| 2 | Item Absent + disputeOutcome=Reject, has feedback | `revokeFeedback(oldIndex)` then `giveFeedback(agentId, -95, 0, "removed", ...)` |
 | 3 | Item Absent + voluntary withdrawal, has feedback | `revokeFeedback(oldIndex)` — no new feedback |
 
 Revoke-then-negative (Scenario 2) ensures `getSummary` = -95, not average of (+95,-95) = 0.
@@ -39,38 +39,47 @@ Revoke-then-negative (Scenario 2) ensures `getSummary` = -95, not average of (+9
 - Stateless diff: read subgraph + Router → `computeActions()` pure function → execute → exit.
 - Multicall3 (`0xcA11bde05977b3631167028862bE2a173976CA11`) for batched `hasFeedback()` reads.
 - Subgraph pagination: `id_gt` cursor, NOT `skip` (degrades >5000). Fetch ALL items incl. Absent.
-- Tx safety: gas estimation retryable, tx submission NOT. Handle null/dropped receipts. Balance preflight. SIGTERM graceful shutdown.
-- POC: admin mapping (Strategy C) for item→agentId. Production: agentId column in PGTCR schema.
-- IPFS evidence schema: `kleros-reputation-oracle/v1` — details in PRD §13.
+- Agent resolution: Strategy A — `metadata.key0` = numeric agentId, `metadata.key2` = CAIP-10 chain validation.
+- Tags: `tag1` = semantic signal (`verified`/`removed`), `tag2` = source identifier (`kleros-agent-registry`).
+- Router upgradeable via UUPS proxy (OpenZeppelin) with storage gaps for future multi-list/multi-product.
+- Kleros v1 arbitrator on Ethereum. PGTCR list supports CAIP-10 multi-chain item registrations.
+- Re-registration after dispute: history accumulates, no revoke of old negative.
 
-## Open questions (§19)
+## Subgraph endpoints
 
-- **Q1:** Re-registration after dispute — history accumulates. Router's single `feedbackIndex[agentId]` needs refinement for this edge case.
-- **Q7:** v1 vs v2 arbitrator — PENDING confirmation. Affects subgraph, arbitratorExtraData format.
+- Sepolia: `https://api.goldsky.com/api/public/project_cmgx9all3003atlp2bqha1zif/subgraphs/pgtcr-sepolia/v0.0.2/gn`
+- Mainnet: `https://api.goldsky.com/api/public/project_cmgx9all3003atlp2bqha1zif/subgraphs/pgtcr-mainnet/v0.0.1/gn`
+- PGTCR contract (Sepolia): `0x3162df9669affa8b6b6ff2147afa052249f00447`
 
-## PRD section index
+<!-- GSD:project-start source:PROJECT.md -->
+## Project
 
-| §  | Topic | Lines |
-|----|-------|-------|
-| 2  | Solution overview, value encoding | 109–131 |
-| 3  | Architecture, component summary | 133–190 |
-| 5  | Deployed addresses | 311–343 |
-| 6  | Mapping logic, 3 scenarios, resolution strategies | 345–461 |
-| 7  | PermanentGTCR contract reference | 463–707 |
-| 8  | PGTCR subgraph schema (GraphQL) | 708–987 |
-| 11 | Router contract full spec | 1109–1383 |
-| 12 | Bot spec (config, polling, diff) | 1384–1852 |
-| 13 | IPFS evidence schema | 1853–1931 |
-| 14 | Kleros 8004 identity setup | 1945–2008 |
-| 16 | Testing plan | 2055–2117 |
-| 17 | File structure | 2119–2170 |
-| 19 | Open design questions | 2213–2278 |
-| 20 | Success criteria | 2281–2306 |
+**Core Value:** Kleros-backed, economically-secured reputation signals for ERC-8004 AI agents — the first reputation oracle where feedback is backed by real economic stake (WETH bonds) and human jury rulings.
 
-## Reference docs
+See `.planning/PROJECT.md` for full project context, requirements, constraints, and key decisions.
+<!-- GSD:project-end -->
 
-- PRD: `.planning/research/kleros-reputation-oracle-prd-v2.md` — read by section number above
-- Amendments: `.planning/research/kleros-reputation-oracle-prd-v2-amendments.md`
+<!-- GSD:stack-start source:research/STACK.md -->
+## Technology Stack
+
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| Solidity | ^0.8.20 | Router contract |
+| Foundry | latest | Contract dev, test, deploy (`forge test --fork-url` for integration) |
+| TypeScript | ^5.7 | Bot language (viem requires strict TS) |
+| Node.js | 22 LTS | Runtime (native `--env-file`, stable fetch) |
+| viem | ^2.47 | Ethereum client (type-safe, native Multicall3) |
+| zod | ^4.3 | Config validation with secret redaction |
+| graphql-request | ^7.4 | Subgraph queries |
+| tsx | ^4.21 | TypeScript execution |
+| @openzeppelin/contracts | ^5.6 | UUPS proxy for upgradeable Router |
+| Biome.js | ^2.4 | Linting + formatting (replaces ESLint + Prettier) |
+| vitest | ^4.1 | Bot unit/integration tests |
+
+**Do NOT use:** ethers.js v5 (deprecated), dotenv (Node 22 has `--env-file`), hardhat (use Foundry), axios (use native fetch), any local DB (stateless architecture), transparent proxy (use UUPS).
+
+See `.planning/research/STACK.md` for full rationale, alternatives, and version compatibility.
+<!-- GSD:stack-end -->
 
 ## Skills (when to use which)
 
@@ -82,108 +91,34 @@ Revoke-then-negative (Scenario 2) ensures `getSummary` = -95, not average of (+9
 | `ethskills:standards` | Broader Ethereum standards context: x402 payment protocol, EIP-3009, EIP-7702, how ERC-8004 fits the ecosystem |
 | `ethskills:indexing` | Subgraph fundamentals, Multicall3 with viem, event design, pagination, alternative indexing solutions |
 
-<!-- GSD:project-start source:PROJECT.md -->
-## Project
+## Reference docs
 
-**Kleros Reputation Oracle**
+- PRD: `.planning/research/kleros-reputation-oracle-prd-v2.md` (2000+ lines, read by section)
+- Amendments: `.planning/research/kleros-reputation-oracle-prd-v2-amendments.md`
 
-A system that converts Kleros PGTCR (Stake Curate) curation events into ERC-8004 on-chain reputation feedback. When an AI agent is verified on a Kleros curated registry, it receives positive reputation (+95). When removed by dispute, it receives negative reputation (-95). When it voluntarily withdraws, the positive reputation is revoked (neutral). Three components: a Router smart contract (Solidity), a stateless Bot (TypeScript), and a one-time Kleros 8004 Identity registration.
+### PRD section index
 
-**Core Value:** Kleros-backed, economically-secured reputation signals for ERC-8004 AI agents — the first reputation oracle where feedback is backed by real economic stake (WETH bonds) and human jury rulings.
-
-### Constraints
-
-- **Tech stack**: Solidity ^0.8.20 (Router), TypeScript with viem (Bot), Foundry (testing/deployment) — per PRD §18
-- **Architecture**: Bot calls Router only, never ReputationRegistry directly — Router is the trusted clientAddress
-- **Tags**: tag1 = semantic signal (`verified`/`removed`), tag2 = source identifier (`kleros-agent-registry`) — designed for future multi-product Kleros feedback
-- **Testing**: Test boundaries (subgraph, contracts), not wiring. No mock-call-ordering tests. Forked integration tests against anvil. Pure function tests for computeActions() diff logic.
-- **Upgradability**: Router must be upgradeable (proxy) to support future multi-list, multi-product extensions without redeployment
-<!-- GSD:project-end -->
-
-<!-- GSD:stack-start source:research/STACK.md -->
-## Technology Stack
-
-## Recommended Stack
-### Core Technologies
-| Technology | Version | Purpose | Why Recommended |
-|------------|---------|---------|-----------------|
-| Solidity | ^0.8.20 | Router contract language | Matches ERC-8004 registry contracts; ^0.8.20 for custom errors, immutable, PUSH0 |
-| Foundry | latest (foundryup) | Contract dev, test, deploy | Industry standard for Solidity; forge test with fork mode for integration tests against anvil |
-| TypeScript | ^5.7 | Bot language | Strict type safety; viem requires it |
-| Node.js | 22 LTS | Runtime | Native `--env-file` flag (no dotenv needed), stable fetch API, LTS until 2027 |
-| viem | ^2.47 | Ethereum client library | Type-safe, native Multicall3 support via `multicall()`, first-class ABI typing, lighter than ethers |
-| zod | ^4.3 | Config validation | Schema validation with `.transform()` for env parsing; `.catch()` for redacting private keys in errors |
-### Supporting Libraries
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| graphql-request | ^7.4 | Subgraph queries | Lightweight GraphQL client; cursor-based pagination with `id_gt` |
-| pinata | ^2.5 | IPFS pinning | Official Pinata SDK for pinning evidence JSON; alternative: raw fetch to pinning API |
-| tsx | ^4.21 | TypeScript execution | Zero-config TS runner; use for bot entry point (`tsx src/index.ts`) |
-| @openzeppelin/contracts | ^5.6 | Proxy patterns | UUPS proxy for upgradeable Router; battle-tested, audited |
-### Development Tools
-| Tool | Purpose | Notes |
-|------|---------|-------|
-| Biome.js ^2.4 | Linting + formatting | Replaces ESLint + Prettier; single tool, fast, opinionated. Config: `biome.json` |
-| vitest ^4.1 | Bot unit/integration tests | Jest-compatible API, native TypeScript, fast; use with viem's test utilities |
-| forge (Foundry) | Contract tests | `forge test --fork-url` for integration tests against Sepolia fork |
-| anvil (Foundry) | Local Ethereum node | Fork Sepolia for integration testing; deploy Router locally |
-## Installation
-# Bot dependencies
-# Bot dev dependencies
-# Contracts (Foundry)
-## Alternatives Considered
-| Recommended | Alternative | When to Use Alternative |
-|-------------|-------------|-------------------------|
-| viem | ethers.js v6 | Only if existing codebase uses ethers; viem has better TypeScript types and native multicall |
-| graphql-request | urql / apollo-client | Only for complex caching; graphql-request is sufficient for simple polling |
-| Biome.js | ESLint + Prettier | Only if team has existing ESLint config to preserve; Biome is faster and simpler |
-| vitest | Jest | Only if Jest plugins are required; vitest is API-compatible and faster |
-| Pinata SDK | web3.storage / Infura IPFS | web3.storage if free tier matters; Pinata has better uptime and simpler API |
-| zod | joi / yup | zod has best TypeScript inference; joi/yup are runtime-only |
-## What NOT to Use
-| Avoid | Why | Use Instead |
-|-------|-----|-------------|
-| ethers.js v5 | Deprecated, no maintenance, poor TypeScript types | viem ^2.47 |
-| dotenv | Node 22 has native `--env-file` flag | `node --env-file=.env` or `tsx --env-file=.env` |
-| hardhat | Slower compilation, plugin overhead, config complexity | Foundry (forge/anvil) |
-| axios | Unnecessary for simple HTTP; fetch is built-in | Native fetch (Node 22) |
-| SQLite/LevelDB/any local DB | Violates stateless architecture; see PRD amendments | Stateless diff from subgraph + chain |
-| Transparent proxy (ERC-1967) | Admin slot collision risk, higher gas | UUPS proxy (ERC-1822) via OpenZeppelin |
-## Stack Patterns by Variant
-- Use `client.multicall({ contracts: [...] })` — viem handles batching automatically
-- Multicall3 at `0xcA11bde05977b3631167028862bE2a173976CA11` (all chains)
-- Batch size: ~100 calls per multicall to stay under gas limits
-- Inherit `UUPSUpgradeable` from OpenZeppelin
-- Use `Initializable` instead of constructor
-- `_authorizeUpgrade()` restricted to owner
-- Deploy via `forge script` with `ERC1967Proxy`
-- Cursor-based: `where: { id_gt: $lastId }`, `orderBy: id`, `first: 1000`
-- Never use `skip` — degrades above 5000, silently truncates above 10000
-## Version Compatibility
-| Package A | Compatible With | Notes |
-|-----------|-----------------|-------|
-| viem ^2.47 | TypeScript ^5.7 | viem requires strict TypeScript for ABI type inference |
-| @openzeppelin/contracts ^5.6 | Solidity ^0.8.20 | v5 dropped Solidity <0.8.20 support |
-| Foundry (latest) | Solidity ^0.8.20 | foundryup always installs latest; pin via foundry.toml `solc_version` |
-| vitest ^4.1 | Node.js ^22 | Uses native test runner hooks |
-## Sources
-- npm registry — versions verified via `npm view` on 2026-03-24
-- viem docs — multicall API, contract interaction patterns
-- OpenZeppelin docs — UUPS proxy pattern, v5 migration
-- Foundry book — forge test, anvil fork mode, deployment scripts
-- PRD §18 — tech stack constraints (Foundry, viem, Biome.js, vitest)
-<!-- GSD:stack-end -->
+| §  | Topic |
+|----|-------|
+| 2  | Solution overview, value encoding |
+| 3  | Architecture, component summary |
+| 5  | Deployed addresses |
+| 6  | Mapping logic, 3 scenarios, resolution strategies |
+| 7  | PermanentGTCR contract reference |
+| 8  | PGTCR subgraph schema (GraphQL) |
+| 11 | Router contract full spec |
+| 12 | Bot spec (config, polling, diff) |
+| 13 | IPFS evidence schema |
+| 14 | Kleros 8004 identity setup |
+| 16 | Testing plan |
+| 17 | File structure |
+| 19 | Open design questions |
+| 20 | Success criteria |
 
 <!-- GSD:conventions-start source:CONVENTIONS.md -->
-## Conventions
-
-Conventions not yet established. Will populate as patterns emerge during development.
 <!-- GSD:conventions-end -->
 
 <!-- GSD:architecture-start source:ARCHITECTURE.md -->
-## Architecture
-
-Architecture not yet mapped. Follow existing patterns found in the codebase.
 <!-- GSD:architecture-end -->
 
 <!-- GSD:workflow-start source:GSD defaults -->
@@ -202,6 +137,26 @@ Do not make direct repo edits outside a GSD workflow unless the user explicitly 
 <!-- GSD:profile-start -->
 ## Developer Profile
 
-> Profile not yet configured. Run `/gsd:profile-user` to generate your developer profile.
-> This section is managed by `generate-claude-profile` -- do not edit manually.
+> Generated by GSD from session_analysis. Run `/gsd:profile-user --refresh` to update.
+
+| Dimension | Rating | Confidence |
+|-----------|--------|------------|
+| Communication | conversational | HIGH |
+| Decisions | fast-intuitive | MEDIUM |
+| Explanations | concise | HIGH |
+| Debugging | diagnostic | MEDIUM |
+| UX Philosophy | full-stack | MEDIUM |
+| Vendor Choices | opinionated | MEDIUM |
+| Frustrations | instruction-adherence | MEDIUM |
+| Learning | guided | MEDIUM |
+
+**Directives:**
+- **Communication:** Conversational tone. Address all parts of multi-part messages. No excessive formality.
+- **Decisions:** Concise options, expect quick decisions. Confirm or challenge leanings directly.
+- **Explanations:** Telegraphic style. Key decisions + brief rationale. No preambles.
+- **Debugging:** Root cause alongside fix. Share diagnostics and reasoning.
+- **UX Philosophy:** Full-stack perspective. Proactively suggest UI/UX improvements when relevant.
+- **Vendor Choices:** Respect stated tool preferences. Use what project docs specify. Don't substitute without asking.
+- **Frustrations:** Follow instructions precisely. Read project docs before acting. Ask, don't guess.
+- **Learning:** Explain new concepts through dialogue. Anchor in existing project patterns.
 <!-- GSD:profile-end -->
