@@ -1,0 +1,21 @@
+{
+    "type": "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
+    "name": "Kleros Reputation Oracle",
+    "description": "Economically-secured agent reputation powered by Kleros Curate (PermanentGTCR). Agents verified by human jurors with continuous staking — challengeable at any time. Registered agents have WETH bonded in a Permanent TCR; removal requires a successful Kleros dispute.",
+    "image": "ipfs://bafkreihav5xmrhhuc6lo2vjksyctli2u54zzz3askv33u4czbcwhqfhh5y",
+    "services": [
+        {
+            "name": "web",
+            "endpoint": "https://kleros.io"
+        },
+        {
+            "name": "verified-agents-registry",
+            "endpoint": "https://curate.kleros.io/tcr/11155111/0x3162df9669affa8b6b6ff2147afa052249f00447"
+        }
+    ],
+    "x402Support": false,
+    "active": true,
+    "supportedTrust": [
+        "reputation"
+    ]
+}
