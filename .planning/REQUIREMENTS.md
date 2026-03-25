@@ -84,39 +84,39 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ROUT-01 | — | Pending |
-| ROUT-02 | — | Pending |
-| ROUT-03 | — | Pending |
-| ROUT-04 | — | Pending |
-| ROUT-05 | — | Pending |
-| ROUT-06 | — | Pending |
-| ROUT-07 | — | Pending |
-| ROUT-08 | — | Pending |
-| ROUT-09 | — | Pending |
-| ROUT-10 | — | Pending |
-| BOT-01 | — | Pending |
-| BOT-02 | — | Pending |
-| BOT-03 | — | Pending |
-| BOT-04 | — | Pending |
-| BOT-05 | — | Pending |
-| BOT-06 | — | Pending |
-| BOT-07 | — | Pending |
-| BOT-08 | — | Pending |
-| BOT-09 | — | Pending |
-| SETUP-01 | — | Pending |
-| SETUP-02 | — | Pending |
-| SETUP-03 | — | Pending |
-| SETUP-04 | — | Pending |
-| VER-01 | — | Pending |
-| VER-02 | — | Pending |
-| VER-03 | — | Pending |
-| VER-04 | — | Pending |
+| ROUT-01 | Phase 1 | Pending |
+| ROUT-02 | Phase 1 | Pending |
+| ROUT-03 | Phase 1 | Pending |
+| ROUT-04 | Phase 1 | Pending |
+| ROUT-05 | Phase 1 | Pending |
+| ROUT-06 | Phase 1 | Pending |
+| ROUT-07 | Phase 1 | Pending |
+| ROUT-08 | Phase 1 | Pending |
+| ROUT-09 | Phase 1 | Pending |
+| ROUT-10 | Phase 1 | Pending |
+| BOT-01 | Phase 2 | Pending |
+| BOT-02 | Phase 2 | Pending |
+| BOT-03 | Phase 2 | Pending |
+| BOT-04 | Phase 2 | Pending |
+| BOT-05 | Phase 2 | Pending |
+| BOT-06 | Phase 2 | Pending |
+| BOT-07 | Phase 2 | Pending |
+| BOT-08 | Phase 2 | Pending |
+| BOT-09 | Phase 2 | Pending |
+| SETUP-01 | Phase 1 | Pending |
+| SETUP-02 | Phase 1 | Pending |
+| SETUP-03 | Phase 1 | Pending |
+| SETUP-04 | Phase 1 | Pending |
+| VER-01 | Phase 3 | Pending |
+| VER-02 | Phase 3 | Pending |
+| VER-03 | Phase 3 | Pending |
+| VER-04 | Phase 3 | Pending |
 
 **Coverage:**
 - v1 requirements: 27 total
-- Mapped to phases: 0
-- Unmapped: 27 ⚠️
+- Mapped to phases: 27
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-25*
-*Last updated: 2026-03-25 after initial definition*
+*Last updated: 2026-03-25 after roadmap creation*
