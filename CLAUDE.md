@@ -91,12 +91,19 @@ See `.planning/research/STACK.md` for full rationale, alternatives, and version 
 | `ethskills:standards` | Broader Ethereum standards context: x402 payment protocol, EIP-3009, EIP-7702, how ERC-8004 fits the ecosystem |
 | `ethskills:indexing` | Subgraph fundamentals, Multicall3 with viem, event design, pagination, alternative indexing solutions |
 
-## Reference docs
+## Document hierarchy
 
-- PRD: `.planning/research/kleros-reputation-oracle-prd-v2.md` (2000+ lines, read by section)
-- Amendments: `.planning/research/kleros-reputation-oracle-prd-v2-amendments.md`
+**Authoritative (current):** GSD artifacts override everything else where they disagree.
+- `.planning/REQUIREMENTS.md` — canonical requirements (tag values, function signatures, acceptance criteria)
+- `.planning/PROJECT.md` — project context, constraints, key decisions
+- `.planning/phases/*/XX-CONTEXT.md` — locked implementation decisions per phase
+- `CLAUDE.md` (this file) — architecture, conventions, constraints
 
-### PRD section index
+**Historical reference (read-only):** The PRD predates the GSD project setup. It contains useful background and rationale but is **not authoritative** — several details (tag values, state tracking model, atomicity decisions) were revised during GSD context gathering. When the PRD contradicts GSD artifacts, GSD artifacts win.
+- `.planning/research/kleros-reputation-oracle-prd-v2.md` (2000+ lines, read by section)
+- `.planning/research/kleros-reputation-oracle-prd-v2-amendments.md`
+
+### PRD section index (for background reading)
 
 | §  | Topic |
 |----|-------|
@@ -112,7 +119,7 @@ See `.planning/research/STACK.md` for full rationale, alternatives, and version 
 | 14 | Kleros 8004 identity setup |
 | 16 | Testing plan |
 | 17 | File structure |
-| 19 | Open design questions |
+| 19 | Open design questions (many resolved in GSD CONTEXT.md files) |
 | 20 | Success criteria |
 
 <!-- GSD:conventions-start source:CONVENTIONS.md -->
