@@ -15,6 +15,12 @@ import {IIdentityRegistry} from "../src/interfaces/IIdentityRegistry.sol";
 ///   4. Authorize bot address on Router (SETUP-04)
 ///
 /// Usage:
+///   # Required env vars:
+///   #   BOT_ADDRESS          — address to authorize as bot caller
+///   #   KLEROS_AGENT_URI     — URI to agent metadata JSON (IPFS or HTTPS, must return valid JSON)
+///   #   DEPLOYER_PRIVATE_KEY — deployer wallet private key
+///   #   SEPOLIA_RPC_URL      — Sepolia RPC endpoint
+///
 ///   # Dry run (simulation):
 ///   forge script script/Deploy.s.sol --rpc-url $SEPOLIA_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY
 ///
@@ -28,12 +34,10 @@ contract Deploy is Script {
     address constant REPUTATION_REGISTRY = 0x8004B663056A597Dffe9eCcC1965A193B7388713;
     address constant IDENTITY_REGISTRY = 0x8004A818BFB912233c491871b3d84c89A494BD9e;
 
-    // ─── Kleros agent metadata URI ───────────────────────────────────────────────
-    string constant KLEROS_AGENT_URI = "https://kleros.io/reputation-oracle";
-
     function run() external {
         // Read environment variables
         address botAddress = vm.envAddress("BOT_ADDRESS");
+        string memory klerosAgentURI = vm.envString("KLEROS_AGENT_URI");
         address proxyAddress = vm.envOr("ROUTER_PROXY_ADDRESS", address(0));
 
         vm.startBroadcast();
@@ -62,7 +66,7 @@ contract Deploy is Script {
         // ─── Step 2: Register Kleros agent on IdentityRegistry (SETUP-02) ───────
         if (router.klerosAgentId() == 0) {
             console.log("Step 2: Registering Kleros agent on IdentityRegistry...");
-            uint256 agentId = IIdentityRegistry(IDENTITY_REGISTRY).register(KLEROS_AGENT_URI);
+            uint256 agentId = IIdentityRegistry(IDENTITY_REGISTRY).register(klerosAgentURI);
             console.log("  Kleros agentId:", agentId);
 
             // ─── Step 3: Configure Router with agentId (SETUP-03) ────────────────
