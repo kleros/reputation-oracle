@@ -35,10 +35,7 @@ interface ItemsResponse {
  * Never uses skip-based pagination (degrades >5000 items).
  * Returns ALL items including Absent status (needed for Scenarios 2 and 3).
  */
-export async function fetchAllItems(
-	subgraphUrl: string,
-	registryAddress: string,
-): Promise<RawSubgraphItem[]> {
+export async function fetchAllItems(subgraphUrl: string, registryAddress: string): Promise<RawSubgraphItem[]> {
 	const client = new GraphQLClient(subgraphUrl);
 	const allItems: RawSubgraphItem[] = [];
 	let lastId = "";
