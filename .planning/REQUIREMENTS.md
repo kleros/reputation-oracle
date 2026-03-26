@@ -26,8 +26,8 @@
 - [x] **BOT-04**: Bot resolves agentId from subgraph `metadata.key0` (Strategy A) and validates chain via `metadata.key2` (CAIP-10)
 - [x] **BOT-05**: Bot validates subgraph data before acting: itemID format, metadata fields, status enum values, disputeOutcome values
 - [x] **BOT-06**: Config validated at startup via zod schema: required CHAIN_ID, RPC_URL, BOT_PRIVATE_KEY (redacted in errors), SUBGRAPH_URL, ROUTER_ADDRESS
-- [ ] **BOT-07**: Bot is one-shot — runs once, exits with code 0 on success, non-zero on failure
-- [ ] **BOT-08**: Dry-run mode — read-only execution that displays on stdout the write operations the bot would have performed, without submitting any transactions
+- [x] **BOT-07**: Bot is one-shot — runs once, exits with code 0 on success, non-zero on failure
+- [x] **BOT-08**: Dry-run mode — read-only execution that displays on stdout the write operations the bot would have performed, without submitting any transactions
 - [x] **BOT-09**: Items that fail validation are logged and skipped, not crash the run
 
 ### Identity & Setup
@@ -100,8 +100,8 @@
 | BOT-04 | Phase 2 | Complete |
 | BOT-05 | Phase 2 | Complete |
 | BOT-06 | Phase 2 | Complete |
-| BOT-07 | Phase 2 | Pending |
-| BOT-08 | Phase 2 | Pending |
+| BOT-07 | Phase 2 | Complete |
+| BOT-08 | Phase 2 | Complete |
 | BOT-09 | Phase 2 | Complete |
 | SETUP-01 | Phase 1 | Pending |
 | SETUP-02 | Phase 1 | Pending |

@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: verifying
-stopped_at: Completed 02-03-PLAN.md
-last_updated: "2026-03-26T14:35:12.661Z"
+stopped_at: Completed 02-04-PLAN.md
+last_updated: "2026-03-26T14:59:28.351Z"
 last_activity: 2026-03-26
 progress:
   total_phases: 3
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 7
-  completed_plans: 5
+  completed_plans: 7
   percent: 0
 ---
 
@@ -55,6 +55,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01 P02 | 4min | 2 tasks | 1 files |
 | Phase 02 P01 | 5min | 3 tasks | 12 files |
 | Phase 02 P03 | 4min | 2 tasks | 2 files |
+| Phase 02 P04 | 3min | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -71,6 +72,7 @@ Recent decisions affecting current work:
 - [Phase 02]: Evidence tags use verified/removed matching Router constants per CLAUDE.md, not curate-verified/curate-removed from PRD
 - [Phase 02]: batchSize 1024*200 bytes for Multicall3 (bytes not call count per Pitfall 7)
 - [Phase 02]: Failed multicall reads default to FeedbackType.None (conservative approach)
+- [Phase 02]: BigInt serialized as string in dry-run JSON output
 
 ### Pending Todos
 
@@ -84,6 +86,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-26T14:35:12.658Z
-Stopped at: Completed 02-03-PLAN.md
+Last session: 2026-03-26T14:59:28.349Z
+Stopped at: Completed 02-04-PLAN.md
 Resume file: None
