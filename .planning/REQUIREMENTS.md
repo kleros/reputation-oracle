@@ -20,8 +20,8 @@
 
 ### Bot Core
 
-- [ ] **BOT-01**: Bot reads all PGTCR items from Goldsky subgraph using cursor-based pagination (`id_gt`, never `skip`)
-- [ ] **BOT-02**: Bot reads Router state via Multicall3-batched `hasFeedback()` calls
+- [x] **BOT-01**: Bot reads all PGTCR items from Goldsky subgraph using cursor-based pagination (`id_gt`, never `skip`)
+- [x] **BOT-02**: Bot reads Router state via Multicall3-batched `hasFeedback()` calls
 - [ ] **BOT-03**: `computeActions()` pure function computes diff between subgraph state and Router state, returning action list for all 3 scenarios
 - [x] **BOT-04**: Bot resolves agentId from subgraph `metadata.key0` (Strategy A) and validates chain via `metadata.key2` (CAIP-10)
 - [x] **BOT-05**: Bot validates subgraph data before acting: itemID format, metadata fields, status enum values, disputeOutcome values
@@ -94,8 +94,8 @@
 | ROUT-08 | Phase 1 | Pending |
 | ROUT-09 | Phase 1 | Pending |
 | ROUT-10 | Phase 1 | Complete |
-| BOT-01 | Phase 2 | Pending |
-| BOT-02 | Phase 2 | Pending |
+| BOT-01 | Phase 2 | Complete |
+| BOT-02 | Phase 2 | Complete |
 | BOT-03 | Phase 2 | Pending |
 | BOT-04 | Phase 2 | Complete |
 | BOT-05 | Phase 2 | Complete |
