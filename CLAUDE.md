@@ -1,5 +1,13 @@
 # Kleros Reputation Oracle
 
+Work style: telegraph; noun-phrases ok; drop filler/grammar; min tokens
+
+## Git
+
+Commits require GPG passphrase (interactive — will hang). Always use `-c commit.gpgsign=false` and append `Co-Authored-By: Claude <noreply@anthropic.com>` to commit messages.
+
+## Project
+
 Converts Kleros PGTCR (Stake Curate) curation events → ERC-8004 on-chain reputation feedback.
 Three components: **Router contract** (Solidity), **Bot** (TypeScript), **Kleros 8004 Identity** (one-time setup).
 Target: Ethereum Sepolia (chainId 11155111). Tooling: Foundry, viem, Biome.js, vitest.
