@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Claude Code
+.claude/settings.local.json
+.claude/worktrees
+
+# Foundry (contracts/)
+contracts/cache/
+contracts/out/
+contracts/docs/
+!contracts/broadcast/
+contracts/broadcast/*/31337/
+contracts/broadcast/**/dry-run/
+
+# Bot
+bot/node_modules/
