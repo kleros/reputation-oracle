@@ -23,12 +23,12 @@
 - [ ] **BOT-01**: Bot reads all PGTCR items from Goldsky subgraph using cursor-based pagination (`id_gt`, never `skip`)
 - [ ] **BOT-02**: Bot reads Router state via Multicall3-batched `hasFeedback()` calls
 - [ ] **BOT-03**: `computeActions()` pure function computes diff between subgraph state and Router state, returning action list for all 3 scenarios
-- [ ] **BOT-04**: Bot resolves agentId from subgraph `metadata.key0` (Strategy A) and validates chain via `metadata.key2` (CAIP-10)
-- [ ] **BOT-05**: Bot validates subgraph data before acting: itemID format, metadata fields, status enum values, disputeOutcome values
-- [ ] **BOT-06**: Config validated at startup via zod schema: required CHAIN_ID, RPC_URL, BOT_PRIVATE_KEY (redacted in errors), SUBGRAPH_URL, ROUTER_ADDRESS
+- [x] **BOT-04**: Bot resolves agentId from subgraph `metadata.key0` (Strategy A) and validates chain via `metadata.key2` (CAIP-10)
+- [x] **BOT-05**: Bot validates subgraph data before acting: itemID format, metadata fields, status enum values, disputeOutcome values
+- [x] **BOT-06**: Config validated at startup via zod schema: required CHAIN_ID, RPC_URL, BOT_PRIVATE_KEY (redacted in errors), SUBGRAPH_URL, ROUTER_ADDRESS
 - [ ] **BOT-07**: Bot is one-shot — runs once, exits with code 0 on success, non-zero on failure
 - [ ] **BOT-08**: Dry-run mode — read-only execution that displays on stdout the write operations the bot would have performed, without submitting any transactions
-- [ ] **BOT-09**: Items that fail validation are logged and skipped, not crash the run
+- [x] **BOT-09**: Items that fail validation are logged and skipped, not crash the run
 
 ### Identity & Setup
 
@@ -97,12 +97,12 @@
 | BOT-01 | Phase 2 | Pending |
 | BOT-02 | Phase 2 | Pending |
 | BOT-03 | Phase 2 | Pending |
-| BOT-04 | Phase 2 | Pending |
-| BOT-05 | Phase 2 | Pending |
-| BOT-06 | Phase 2 | Pending |
+| BOT-04 | Phase 2 | Complete |
+| BOT-05 | Phase 2 | Complete |
+| BOT-06 | Phase 2 | Complete |
 | BOT-07 | Phase 2 | Pending |
 | BOT-08 | Phase 2 | Pending |
-| BOT-09 | Phase 2 | Pending |
+| BOT-09 | Phase 2 | Complete |
 | SETUP-01 | Phase 1 | Pending |
 | SETUP-02 | Phase 1 | Pending |
 | SETUP-03 | Phase 1 | Pending |
