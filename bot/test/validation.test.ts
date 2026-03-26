@@ -43,10 +43,10 @@ describe("validateAndTransformItem", () => {
 	it("transforms valid item to ValidatedItem with bigint agentId", () => {
 		const result = validateAndTransformItem(makeItem(), targetChainId);
 		expect(result).not.toBeNull();
-		expect(result!.agentId).toBe(42n);
-		expect(result!.status).toBe("Submitted");
-		expect(result!.itemID).toBe("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef");
-		expect(result!.pgtcrItemId).toBe(result!.itemID);
+		expect(result?.agentId).toBe(42n);
+		expect(result?.status).toBe("Submitted");
+		expect(result?.itemID).toBe("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef");
+		expect(result?.pgtcrItemId).toBe(result?.itemID);
 	});
 
 	it("returns null for missing metadata", () => {
@@ -119,23 +119,20 @@ describe("validateAndTransformItem", () => {
 			targetChainId,
 		);
 		expect(result).not.toBeNull();
-		expect(result!.latestDisputeOutcome).toBe("Reject");
-		expect(result!.disputeId).toBe("1234");
+		expect(result?.latestDisputeOutcome).toBe("Reject");
+		expect(result?.disputeId).toBe("1234");
 	});
 
 	it("sets latestDisputeOutcome to null for Absent items with no challenges", () => {
 		const result = validateAndTransformItem(makeItem({ status: "Absent", challenges: [] }), targetChainId);
 		expect(result).not.toBeNull();
-		expect(result!.latestDisputeOutcome).toBeNull();
-		expect(result!.disputeId).toBeNull();
+		expect(result?.latestDisputeOutcome).toBeNull();
+		expect(result?.disputeId).toBeNull();
 	});
 
 	it("returns null for missing key2", () => {
 		const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
-		const result = validateAndTransformItem(
-			makeItem({ metadata: { key0: "42", key2: null } }),
-			targetChainId,
-		);
+		const result = validateAndTransformItem(makeItem({ metadata: { key0: "42", key2: null } }), targetChainId);
 		expect(result).toBeNull();
 		spy.mockRestore();
 	});
@@ -143,6 +140,6 @@ describe("validateAndTransformItem", () => {
 	it("handles Reincluded status as valid", () => {
 		const result = validateAndTransformItem(makeItem({ status: "Reincluded" }), targetChainId);
 		expect(result).not.toBeNull();
-		expect(result!.status).toBe("Reincluded");
+		expect(result?.status).toBe("Reincluded");
 	});
 });

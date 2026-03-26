@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { EvidenceJson } from "../src/types.js";
 import { buildFeedbackURI, buildNegativeEvidence, buildPositiveEvidence } from "../src/evidence.js";
+import type { EvidenceJson } from "../src/types.js";
 
 const baseParams = {
 	agentId: 42n,

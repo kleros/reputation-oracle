@@ -1,0 +1,91 @@
+import type { EvidenceJson } from "./types.js";
+
+const AGENT_REGISTRY_ADDRESS = "0x8004A818BFB912233c491871b3d84c89A494BD9e";
+
+interface EvidenceParams {
+	agentId: bigint;
+	pgtcrItemId: string;
+	pgtcrAddress: string;
+	routerAddress: string;
+	chainId: number;
+	stake: string | null;
+}
+
+interface NegativeEvidenceParams extends EvidenceParams {
+	disputeId: string | null;
+}
+
+/**
+ * Build positive feedback evidence (Scenario 1: verified on PGTCR).
+ * tag1 = "verified", value = 95
+ */
+export function buildPositiveEvidence(params: EvidenceParams): EvidenceJson {
+	return {
+		schema: "kleros-reputation-oracle/v1",
+		agentRegistry: `eip155:${params.chainId}:${AGENT_REGISTRY_ADDRESS}`,
+		agentId: Number(params.agentId),
+		clientAddress: `eip155:${params.chainId}:${params.routerAddress}`,
+		createdAt: new Date().toISOString(),
+		value: 95,
+		valueDecimals: 0,
+		tag1: "verified",
+		tag2: "kleros-agent-registry",
+		kleros: {
+			pgtcrAddress: params.pgtcrAddress,
+			pgtcrItemId: params.pgtcrItemId,
+			stakeAmount: formatStake(params.stake),
+			stakeToken: "WETH",
+			disputeId: null,
+			ruling: null,
+		},
+	};
+}
+
+/**
+ * Build negative feedback evidence (Scenario 2: removed by dispute).
+ * tag1 = "removed", value = -95
+ */
+export function buildNegativeEvidence(params: NegativeEvidenceParams): EvidenceJson {
+	const disputeIdNum = params.disputeId ? Number.parseInt(params.disputeId, 10) : null;
+	return {
+		schema: "kleros-reputation-oracle/v1",
+		agentRegistry: `eip155:${params.chainId}:${AGENT_REGISTRY_ADDRESS}`,
+		agentId: Number(params.agentId),
+		clientAddress: `eip155:${params.chainId}:${params.routerAddress}`,
+		createdAt: new Date().toISOString(),
+		value: -95,
+		valueDecimals: 0,
+		tag1: "removed",
+		tag2: "kleros-agent-registry",
+		kleros: {
+			pgtcrAddress: params.pgtcrAddress,
+			pgtcrItemId: params.pgtcrItemId,
+			stakeAmount: formatStake(params.stake),
+			stakeToken: "WETH",
+			disputeId: disputeIdNum,
+			ruling: disputeIdNum !== null ? 2 : null,
+		},
+	};
+}
+
+/**
+ * Build a data: URI from evidence JSON (base64-encoded).
+ * Returns "data:application/json;base64,<base64>"
+ */
+export function buildFeedbackURI(evidence: EvidenceJson): string {
+	const json = JSON.stringify(evidence);
+	const base64 = Buffer.from(json).toString("base64");
+	return `data:application/json;base64,${base64}`;
+}
+
+/**
+ * Format stake from wei string to human-readable ETH.
+ * Returns "0" if stake is null/empty.
+ */
+function formatStake(stake: string | null): string {
+	if (!stake) return "0";
+	// Convert wei to ETH (18 decimals)
+	const wei = BigInt(stake);
+	const eth = Number(wei) / 1e18;
+	return eth.toString();
+}

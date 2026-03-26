@@ -6,7 +6,8 @@ const validEnv = {
 	RPC_URL: "https://ethereum-sepolia-rpc.publicnode.com",
 	ROUTER_ADDRESS: "0x1234567890abcdef1234567890abcdef12345678",
 	PGTCR_ADDRESS: "0x3162df9669affa8b6b6ff2147afa052249f00447",
-	SUBGRAPH_URL: "https://api.goldsky.com/api/public/project_cmgx9all3003atlp2bqha1zif/subgraphs/pgtcr-sepolia/v0.0.2/gn",
+	SUBGRAPH_URL:
+		"https://api.goldsky.com/api/public/project_cmgx9all3003atlp2bqha1zif/subgraphs/pgtcr-sepolia/v0.0.2/gn",
 	BOT_PRIVATE_KEY: "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
 };
 
@@ -43,7 +44,7 @@ describe("configSchema", () => {
 	});
 
 	it("does not expose BOT_PRIVATE_KEY in error output", () => {
-		const badKey = "0x" + "ff".repeat(32);
+		const badKey = `0x${"ff".repeat(32)}`;
 		const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
 		// Use a bad env but with a valid-looking private key that we want to make sure isn't leaked
