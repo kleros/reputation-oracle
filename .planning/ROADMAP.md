@@ -49,7 +49,7 @@ Plans:
 
 Plans:
 - [x] 02-01: TBD
-- [ ] 02-02: TBD
+- [x] 02-02: TBD
 
 ### Phase 3: End-to-End Verification
 **Goal**: All three scenarios are proven correct on Sepolia -- the complete pipeline from PGTCR curation event to ERC-8004 reputation is verified via getSummary()
