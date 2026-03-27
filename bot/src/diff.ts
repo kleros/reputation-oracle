@@ -1,4 +1,4 @@
-import { FeedbackType, type Action, type ValidatedItem } from "./types.js";
+import { type Action, FeedbackType, type ValidatedItem } from "./types.js";
 
 /**
  * Pure stateless diff engine: maps (subgraph state, router state) -> action list.
