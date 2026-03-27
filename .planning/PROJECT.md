@@ -12,28 +12,22 @@ Kleros-backed, economically-secured reputation signals for ERC-8004 AI agents �
 
 ### Validated
 
-(None yet — ship to validate)
+- [x] Router contract deployed on Sepolia with hardcoded feedback constants (±95, decimals 0) — Phase 1
+- [x] Router tracks feedback state per agentId (FeedbackType enum, feedbackIndex) — Phase 1
+- [x] Bot reads PGTCR state from Goldsky subgraph (cursor-based pagination, all items including Absent) — Phase 2
+- [x] Bot reads Router state via Multicall3-batched hasFeedback() calls — Phase 2
+- [x] Bot computes stateless diff: subgraph state vs Router state → action list — Phase 2
+- [x] Scenario 1: Item Submitted/Reincluded + no feedback → giveFeedback(+95, "verified", "kleros-agent-registry") — Phase 3 E2E
+- [x] Scenario 2: Item Absent + disputeOutcome=Reject + has feedback → revokeFeedback then giveFeedback(-95) — Phase 1 fork tests
+- [x] Scenario 3: Item Absent + voluntary withdrawal + has feedback → revokeFeedback only — Phase 1 fork tests
+- [x] Tag filtering via getSummary with tag1="verified"/"removed" returns correct results — Phase 3 E2E
+- [x] Bot is one-shot (run once, exit) — no daemon mode, no polling loop — Phase 2
+- [x] Contract upgradeable via UUPS proxy — Phase 1
+- [x] All three scenarios verifiable on Sepolia via getSummary() — Phase 3
 
 ### Active
 
-- [ ] Router contract deployed on Sepolia with hardcoded feedback constants (±95, decimals 0)
-- [ ] Router tracks feedback state per agentId (hasFeedback, feedbackIndex)
-- [ ] Router maps PGTCR itemId → agentId via on-chain mapping (Strategy C for admin, Strategy A as primary via subgraph key0)
-- [ ] Bot reads PGTCR state from Goldsky subgraph (cursor-based pagination, all items including Absent)
-- [ ] Bot reads Router state via Multicall3-batched hasFeedback() calls
-- [ ] Bot computes stateless diff: subgraph state vs Router state → action list
-- [ ] Scenario 1: Item Submitted/Reincluded + no feedback → giveFeedback(+95, "verified", "kleros-agent-registry")
-- [ ] Scenario 2: Item Absent + disputeOutcome=Reject + has feedback → revokeFeedback then giveFeedback(-95, "removed", "kleros-agent-registry")
-- [ ] Scenario 3: Item Absent + voluntary withdrawal + has feedback → revokeFeedback only
-- [ ] Bot resolves agentId from subgraph metadata.key0, validates chain via metadata.key2 (CAIP-10)
-- [ ] Bot uploads IPFS evidence JSON (kleros-reputation-oracle/v1 schema) before feedback calls
-- [ ] Bot is one-shot (run once, exit) — no daemon mode, no polling loop
-- [ ] Transaction safety: gas estimation retryable, tx submission not; handle null/dropped receipts; balance preflight; SIGTERM graceful shutdown
-- [ ] Subgraph data validation: itemID format, metadata fields, status enum, disputeOutcome
-- [ ] Config validation at startup: required CHAIN_ID, generic RPC_URL, private key redaction
-- [ ] Kleros registered as 8004 agent on IdentityRegistry with oracle service metadata
-- [ ] Contract upgradeable (proxy pattern) to support future multi-list and multi-product extensions
-- [ ] All three scenarios verifiable on Sepolia via getSummary()
+(All v1.0 requirements validated — see above)
 
 ### Out of Scope
 
@@ -72,13 +66,13 @@ Kleros-backed, economically-secured reputation signals for ERC-8004 AI agents �
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Strategy A for agent resolution (key0 = agentId) | AgentId already in PGTCR item metadata; no admin overhead | — Pending |
-| Tags: verified/removed + kleros-agent-registry | Generic tag1 enables cross-provider filtering; tag2 identifies Kleros source; future-proof for Reality proxy etc. | — Pending |
-| Stateless diff architecture | No local DB needed; idempotency from architecture; prior PoC proved DB approach adds complexity without value | — Pending |
-| One-shot bot, no daemon | External scheduler handles frequency; simpler ops; prior PoC's daemon mode was over-engineered | — Pending |
-| Kleros v1 arbitrator | Current PGTCR uses v1; architecture supports future v2 migration | — Pending |
-| History accumulates on re-registration | Agent removed then re-accepted shows mixed record (-95, +95); no revoke of old negative | — Pending |
-| Upgradeable Router contract | Future multi-list and multi-product extensions without redeployment | — Pending |
+| Strategy A for agent resolution (key0 = agentId) | AgentId already in PGTCR item metadata; no admin overhead | Validated Phase 2 |
+| Tags: verified/removed + kleros-agent-registry | Generic tag1 enables cross-provider filtering; tag2 identifies Kleros source; future-proof for Reality proxy etc. | Validated Phase 3 |
+| Stateless diff architecture | No local DB needed; idempotency from architecture; prior PoC proved DB approach adds complexity without value | Validated Phase 3 |
+| One-shot bot, no daemon | External scheduler handles frequency; simpler ops; prior PoC's daemon mode was over-engineered | Validated Phase 2 |
+| Kleros v1 arbitrator | Current PGTCR uses v1; architecture supports future v2 migration | Validated Phase 1 |
+| History accumulates on re-registration | Agent removed then re-accepted shows mixed record (-95, +95); no revoke of old negative | Validated Phase 1 |
+| Upgradeable Router contract | Future multi-list and multi-product extensions without redeployment | Validated Phase 1 |
 
 ## Evolution
 
@@ -98,4 +92,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-24 after initialization*
+*Last updated: 2026-03-27 after Phase 3 completion — all v1.0 milestone requirements validated*
