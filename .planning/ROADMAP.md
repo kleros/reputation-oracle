@@ -45,11 +45,13 @@ Plans:
   3. Running the bot in dry-run mode prints planned actions to stdout without submitting any transactions
   4. Bot exits with code 0 after successful execution and non-zero on failure, with no daemon loop
   5. Malformed subgraph items are logged and skipped without crashing the run
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- [x] 02-01: TBD
-- [x] 02-02: TBD
+- [x] 02-01-PLAN.md -- Project scaffold, types, Router ABI, config, validation, evidence (BOT-04, BOT-05, BOT-06, BOT-09)
+- [x] 02-02-PLAN.md -- TDD computeActions() pure diff engine for all 3 scenarios (BOT-03)
+- [x] 02-03-PLAN.md -- Subgraph client with cursor pagination, chain reader with Multicall3 (BOT-01, BOT-02)
+- [x] 02-04-PLAN.md -- Index.ts orchestrator with dry-run support and exit codes (BOT-07, BOT-08)
 
 ### Phase 3: End-to-End Verification
 **Goal**: All three scenarios are proven correct on Sepolia -- the complete pipeline from PGTCR curation event to ERC-8004 reputation is verified via getSummary()
@@ -73,5 +75,5 @@ Phases execute in numeric order: 1 -> 2 -> 3
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Router Contract & On-Chain Setup | 1/3 | In Progress|  |
-| 2. Stateless Bot | 4/4 | Complete   | 2026-03-26 |
+| 2. Stateless Bot | 4/4 | Complete | 2026-03-26 |
 | 3. End-to-End Verification | 0/1 | Not started | - |
