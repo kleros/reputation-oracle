@@ -28,11 +28,15 @@ $ cast call 0x9ad77EBB8c1c206168B5838eF8cbeC82cEA7c30a "owner()" --rpc-url $SEPO
 
 ## VER-01: Scenario 1 -- Positive Feedback
 
-**Status:** PARTIAL -- Bot dry-run proven, live execution pending
+**Status:** PASS (E2E proven on Sepolia)
 
-### Bot Dry-Run Output (pre-deployment)
+### Bot Live Run
 
-The bot correctly identifies 4 agents requiring positive feedback from 6 valid subgraph items:
+Bot successfully executed 4 `submitPositiveFeedback` transactions for agents 610, 1142, 1143, 1440 on Router `0x9ad77EBB8c1c206168B5838eF8cbeC82cEA7c30a`.
+
+### Bot Dry-Run Output (pre-live-run)
+
+The bot correctly identified 4 agents requiring positive feedback from 6 valid subgraph items:
 
 ```
 > kleros-reputation-bot@0.1.0 start:dry-run
@@ -56,49 +60,72 @@ Dry run complete: 4 actions would be executed
 
 Target agents: 610, 1142, 1143, 1440 (all Scenario 1: Submitted items without existing feedback).
 
-### Verify.s.sol Output (pre-bot-run baseline)
+### Verify.s.sol Output (post-bot-run -- E2E proof)
 
-Router deployed but no feedback submitted yet -- confirms clean initial state:
+After bot submitted live transactions, Verify.s.sol confirms all 4 agents have correct on-chain state:
 
 ```
-=== Kleros Reputation Oracle -- Verification ===
-Router: 0x9ad77EBB8c1c206168B5838eF8cbeC82cEA7c30a
-Verifying 4 agents...
+== Logs ==
+  === Kleros Reputation Oracle -- Verification ===
+  Router: 0x9ad77EBB8c1c206168B5838eF8cbeC82cEA7c30a
+  Verifying 4 agents...
 
-Agent 610:
-  getSummary("", ""):         count=0, value=0
-  [EXPECTED: count=0 before bot run]
+  Agent 610:
+    getSummary("", ""):         count=1, value=95
+      [PASS]
+    getSummary("verified", ""): count=1, value=95
+      [PASS]
+    getSummary("removed", ""):  count=0, value=0
+      [PASS]
+    Router feedbackType: Positive
+      [PASS]
+
+  Agent 1142:
+    getSummary("", ""):         count=1, value=95
+      [PASS]
+    getSummary("verified", ""): count=1, value=95
+      [PASS]
+    getSummary("removed", ""):  count=0, value=0
+      [PASS]
+    Router feedbackType: Positive
+      [PASS]
+
+  Agent 1143:
+    getSummary("", ""):         count=1, value=95
+      [PASS]
+    getSummary("verified", ""): count=1, value=95
+      [PASS]
+    getSummary("removed", ""):  count=0, value=0
+      [PASS]
+    Router feedbackType: Positive
+      [PASS]
+
+  Agent 1440:
+    getSummary("", ""):         count=1, value=95
+      [PASS]
+    getSummary("verified", ""): count=1, value=95
+      [PASS]
+    getSummary("removed", ""):  count=0, value=0
+      [PASS]
+    Router feedbackType: Positive
+      [PASS]
+
+  === All 28 assertions passed ===
 ```
 
-After the bot submits live transactions, re-running Verify.s.sol should show count=1, value=95 for all 4 agents.
-
-### Pending: Bot Live Run
-
-To complete VER-01, run:
-```bash
-cd bot
-npm run start  # with BOT_PRIVATE_KEY in .env
-```
-
-Then verify:
-```bash
-cd contracts
-ROUTER_PROXY_ADDRESS=0x9ad77EBB8c1c206168B5838eF8cbeC82cEA7c30a \
-AGENT_IDS="610,1142,1143,1440" \
-forge script script/Verify.s.sol --rpc-url $SEPOLIA_RPC_URL
-```
+All 28 assertions passed: getSummary returns count=1, value=95 for each agent with unfiltered and "verified" tag queries, count=0 for "removed" tag, and Router tracks FeedbackType.Positive.
 
 ### Idempotency Proof (D-02)
 
-**Status:** Pending bot live run
+**Status:** PASS
 
-After bot live run, a second `npm run start:dry-run` should show:
+Second dry-run after bot live run confirms 0 actions -- stateless diff engine correctly detects on-chain state matches subgraph state:
+
 ```
-Computed 0 actions
 Dry run complete: 0 actions would be executed
 ```
 
-This proves the stateless diff engine correctly detects on-chain state already matches subgraph state.
+This proves the bot is idempotent: re-running produces no duplicate transactions.
 
 ## VER-02: Scenario 2 -- Negative Feedback (Fork Test Proven)
 
@@ -118,13 +145,14 @@ Asserts: count=0 after revocation of positive feedback.
 
 ## VER-04: Tag Filtering
 
-**Status:** PASS (fork tests) | Pending live E2E confirmation after bot run
+**Status:** PASS (E2E proven on Sepolia)
 
-Verify.s.sol includes tag filtering assertions:
-- `getSummary(agentId, [router], "verified", "")` returns count=1 for Scenario 1 agents
-- `getSummary(agentId, [router], "removed", "")` returns count=0 for Scenario 1 agents
+Verify.s.sol confirms tag filtering works on live Sepolia state for all 4 agents:
+- `getSummary(agentId, [router], "verified", "")` returns count=1, value=95
+- `getSummary(agentId, [router], "removed", "")` returns count=0, value=0
 
-Fork tests confirm tag values ("verified" for positive, "removed" for negative) are correctly set in Router.
+See Verify.s.sol output in VER-01 above -- tag assertions are part of the 28 passing assertions.
+Fork tests additionally confirm tag values ("verified" for positive, "removed" for negative) are correctly set in Router.
 
 ## Fork Test Results (All 17 Pass)
 
@@ -156,22 +184,25 @@ Ran 1 test suite in 2.82s (2.59s CPU time): 17 tests passed, 0 failed, 0 skipped
 
 | Requirement | Status | Evidence |
 |-------------|--------|----------|
-| VER-01 | PARTIAL (dry-run correct, live run pending) | Bot dry-run shows 4 correct actions, Router deployed |
+| VER-01 | PASS (E2E) | Bot live run + Verify.s.sol: 28 assertions passed |
 | VER-02 | PASS (fork) | `test_submitNegativeFeedback_revokesPositiveThenSubmitsNegative` |
 | VER-03 | PASS (fork) | `test_revokeOnly_removesPositiveFeedback` |
-| VER-04 | PASS (fork, live pending) | Verify.s.sol tag assertions ready, fork tests confirm tags |
+| VER-04 | PASS (E2E) | Verify.s.sol tag filtering: verified=1, removed=0 |
+| D-02 | PASS | Idempotency: second dry-run shows 0 actions |
 
 ### What's Proven
 
 - Router correctly deployed to Sepolia via UUPS proxy
 - 8004 identity registered (agentId 2295)
-- Bot correctly computes 4 submitPositiveFeedback actions from real subgraph data
-- All 3 scenarios (positive, negative, revoke) pass fork tests against real Sepolia state
-- Tag filtering (verified/removed) works correctly in fork tests
-- Verify.s.sol script ready to assert post-bot-run state
+- Bot correctly computes and executes 4 submitPositiveFeedback actions from real subgraph data
+- On-chain getSummary returns count=1, value=95 for all 4 agents (Verify.s.sol, 28 assertions)
+- Tag filtering: "verified" returns count=1, "removed" returns count=0 (VER-04, E2E)
+- Idempotency: second dry-run produces 0 actions (D-02)
+- All 3 scenarios (positive, negative, revoke) pass fork tests against real Sepolia state (17/17)
+- Full pipeline proven: Subgraph -> Bot -> Router -> ReputationRegistry -> getSummary
 
-### Remaining Step
+### Remaining (not blocking)
 
-Run `npm run start` with a funded bot wallet to submit the 4 feedback transactions, then:
-1. Re-run Verify.s.sol to confirm getSummary returns count=1, value=95
-2. Re-run `npm run start:dry-run` to confirm 0 actions (idempotency)
+- VER-02 live E2E: requires a disputed item on the PGTCR list (none exist yet)
+- VER-03 live E2E: requires a voluntary withdrawal from the PGTCR list (none exist yet)
+- Both are proven via fork tests per D-10
