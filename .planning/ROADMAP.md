@@ -65,7 +65,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 03-01-PLAN.md -- Verify.s.sol Forge script for getSummary assertions and tag filtering (VER-01, VER-02, VER-03, VER-04)
+- [x] 03-01-PLAN.md -- Verify.s.sol Forge script for getSummary assertions and tag filtering (VER-01, VER-02, VER-03, VER-04)
 - [ ] 03-02-PLAN.md -- E2E execution: deploy Router, run bot, verify results, capture evidence report (VER-01, VER-02, VER-03, VER-04)
 
 ## Progress
@@ -77,4 +77,4 @@ Phases execute in numeric order: 1 -> 2 -> 3
 |-------|----------------|--------|-----------|
 | 1. Router Contract & On-Chain Setup | 1/3 | In Progress|  |
 | 2. Stateless Bot | 4/4 | Complete | 2026-03-26 |
-| 3. End-to-End Verification | 0/2 | Not started | - |
+| 3. End-to-End Verification | 1/2 | In Progress | - |
