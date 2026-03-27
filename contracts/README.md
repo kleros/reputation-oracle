@@ -30,9 +30,10 @@ The Router tracks per-agent feedback state (`FeedbackType`: None/Positive/Negati
 
 | Contract | Address |
 |----------|---------|
-| ReputationRegistry | `0x8004B663056A597Dffe9eCcC1965A193B7388713` |
-| IdentityRegistry | `0x8004A818BFB912233c491871b3d84c89A494BD9e` |
-| PGTCR List | `0x3162df9669affa8b6b6ff2147afa052249f00447` |
+| **KlerosReputationRouter (Proxy)** | [`0x9ad77EBB8c1c206168B5838eF8cbeC82cEA7c30a`](https://sepolia.etherscan.io/address/0x9ad77EBB8c1c206168B5838eF8cbeC82cEA7c30a) |
+| ReputationRegistry | [`0x8004B663056A597Dffe9eCcC1965A193B7388713`](https://sepolia.etherscan.io/address/0x8004B663056A597Dffe9eCcC1965A193B7388713) |
+| IdentityRegistry | [`0x8004A818BFB912233c491871b3d84c89A494BD9e`](https://sepolia.etherscan.io/address/0x8004A818BFB912233c491871b3d84c89A494BD9e) |
+| PGTCR List | [`0x3162df9669affa8b6b6ff2147afa052249f00447`](https://sepolia.etherscan.io/address/0x3162df9669affa8b6b6ff2147afa052249f00447) |
 
 ## Development
 
