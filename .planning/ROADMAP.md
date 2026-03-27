@@ -24,7 +24,7 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 | 1. Router Contract & On-Chain Setup | v1.0 | 3/3 | Complete | 2026-03-25 |
 | 2. Stateless Bot | v1.0 | 4/4 | Complete | 2026-03-26 |
 | 3. End-to-End Verification | v1.0 | 2/2 | Complete | 2026-03-27 |
-| 1000. Upgrade bot deps | — | 2/2 | Complete   | 2026-03-27 |
+| 1000. Upgrade bot deps | — | 2/2 | Complete    | 2026-03-27 |
 
 ### Phase 1000: Upgrade bot dependencies to latest majors
 
