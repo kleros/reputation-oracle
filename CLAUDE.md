@@ -16,8 +16,6 @@ Target: Ethereum Sepolia (chainId 11155111). Tooling: Foundry, viem, Biome.js, v
 
 ```
 PGTCR subgraph (GraphQL) → Bot (TS) → Router.sol → 8004 ReputationRegistry
-                                ↕
-                          IPFS (evidence JSON)
 ```
 
 Bot reads PGTCR state from Goldsky subgraph + Router state from chain, diffs, calls Router.
@@ -62,9 +60,12 @@ Revoke-then-negative (Scenario 2) ensures `getSummary` = -95, not average of (+9
 <!-- GSD:project-start source:PROJECT.md -->
 ## Project
 
+**Status:** v1.0 shipped (2026-03-27). Live on Sepolia.
+
 **Core Value:** Kleros-backed, economically-secured reputation signals for ERC-8004 AI agents — the first reputation oracle where feedback is backed by real economic stake (WETH bonds) and human jury rulings.
 
 See `.planning/PROJECT.md` for full project context, requirements, constraints, and key decisions.
+See [`contracts/README.md`](./contracts/README.md) for deployed addresses and deployment guide.
 <!-- GSD:project-end -->
 
 <!-- GSD:stack-start source:research/STACK.md -->
@@ -77,12 +78,12 @@ See `.planning/PROJECT.md` for full project context, requirements, constraints, 
 | TypeScript | ^5.7 | Bot language (viem requires strict TS) |
 | Node.js | 22 LTS | Runtime (native `--env-file`, stable fetch) |
 | viem | ^2.47 | Ethereum client (type-safe, native Multicall3) |
-| zod | ^4.3 | Config validation with secret redaction |
+| zod | ^3.24 | Config validation with secret redaction |
 | graphql-request | ^7.4 | Subgraph queries |
 | tsx | ^4.21 | TypeScript execution |
 | @openzeppelin/contracts | ^5.6 | UUPS proxy for upgradeable Router |
-| Biome.js | ^2.4 | Linting + formatting (replaces ESLint + Prettier) |
-| vitest | ^4.1 | Bot unit/integration tests |
+| Biome.js | ^1.9 | Linting + formatting (replaces ESLint + Prettier) |
+| vitest | ^3.1 | Bot unit/integration tests |
 
 **Do NOT use:** ethers.js v5 (deprecated), dotenv (Node 22 has `--env-file`), hardhat (use Foundry), axios (use native fetch), any local DB (stateless architecture), transparent proxy (use UUPS).
 
@@ -101,11 +102,14 @@ See `.planning/research/STACK.md` for full rationale, alternatives, and version 
 
 ## Document hierarchy
 
-**Authoritative (current):** GSD artifacts override everything else where they disagree.
-- `.planning/REQUIREMENTS.md` — canonical requirements (tag values, function signatures, acceptance criteria)
-- `.planning/PROJECT.md` — project context, constraints, key decisions
-- `.planning/phases/*/XX-CONTEXT.md` — locked implementation decisions per phase
+**Authoritative (current):**
 - `CLAUDE.md` (this file) — architecture, conventions, constraints
+- `.planning/PROJECT.md` — project context, validated requirements, key decisions
+
+**v1.0 planning artifacts (archived, read-only):**
+- `.planning/milestones/v1.0-REQUIREMENTS.md` — v1 requirements with final status
+- `.planning/milestones/v1.0-ROADMAP.md` — v1 phase details and plans
+- `.planning/phases/*/XX-CONTEXT.md` — locked implementation decisions per phase
 
 **Historical reference (read-only):** The PRD predates the GSD project setup. It contains useful background and rationale but is **not authoritative** — several details (tag values, state tracking model, atomicity decisions) were revised during GSD context gathering. When the PRD contradicts GSD artifacts, GSD artifacts win.
 - `.planning/research/kleros-reputation-oracle-prd-v2.md` (2000+ lines, read by section)
