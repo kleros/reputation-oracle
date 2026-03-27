@@ -75,6 +75,18 @@ forge script script/Deploy.s.sol --rpc-url $SEPOLIA_RPC_URL --private-key $DEPLO
 ROUTER_PROXY_ADDRESS=0x... forge script script/Deploy.s.sol --rpc-url $SEPOLIA_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY --broadcast
 ```
 
+### Post-deploy: verify bot authorization
+
+If the bot reverts with `KRR_NotAuthorizedBot()` (`0xde714611`), the bot wallet isn't authorized:
+
+```bash
+# Check
+cast call $ROUTER_PROXY_ADDRESS "authorizedBots(address)(bool)" $BOT_ADDRESS --rpc-url $SEPOLIA_RPC_URL
+
+# Fix (as Router owner)
+cast send $ROUTER_PROXY_ADDRESS "setAuthorizedBot(address,bool)" $BOT_ADDRESS true --rpc-url $SEPOLIA_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY
+```
+
 ### Etherscan verification
 
 **Option 1: During deployment** (recommended)

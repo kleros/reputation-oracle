@@ -50,6 +50,22 @@ cp .env.example .env
 | `SUBGRAPH_URL` | Goldsky subgraph GraphQL endpoint |
 | `BOT_PRIVATE_KEY` | Bot wallet private key (must be authorized on Router) |
 
+## Pre-flight check
+
+The bot wallet **must** be authorized on the Router before it can submit transactions. Verify with:
+
+```bash
+cast call $ROUTER_ADDRESS "authorizedBots(address)(bool)" $(cast wallet address --private-key $BOT_PRIVATE_KEY) --rpc-url $RPC_URL
+```
+
+If `false`, the Router owner must authorize it:
+
+```bash
+cast send $ROUTER_ADDRESS "setAuthorizedBot(address,bool)" <BOT_ADDRESS> true --rpc-url $RPC_URL --private-key $DEPLOYER_PRIVATE_KEY
+```
+
+Or re-run `Deploy.s.sol` with the correct `BOT_ADDRESS` — Step 4 is idempotent and will authorize the new address.
+
 ## Usage
 
 ```bash
