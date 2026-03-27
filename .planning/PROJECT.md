@@ -27,7 +27,7 @@ Kleros-backed, economically-secured reputation signals for ERC-8004 AI agents �
 
 ### Active
 
-(All v1.0 requirements validated — see above)
+(No active requirements — next milestone TBD)
 
 ### Out of Scope
 
@@ -50,6 +50,9 @@ Kleros-backed, economically-secured reputation signals for ERC-8004 AI agents �
 - **Arbitrator:** Kleros v1 on Ethereum
 - **Agent resolution:** Strategy A — metadata.key0 = numeric agentId, metadata.key2 = CAIP-10 chain validation
 - **PGTCR model:** CAIP-10 multi-chain item registrations, one list on Sepolia for testing, one on Mainnet (not yet deployed) for all production chains
+- **Router proxy:** [`0x9ad77EBB8c1c206168B5838eF8cbeC82cEA7c30a`](https://sepolia.etherscan.io/address/0x9ad77EBB8c1c206168B5838eF8cbeC82cEA7c30a) (Sepolia)
+- **Codebase:** ~2,000 LOC (809 Solidity, 695 TypeScript, 493 test TypeScript)
+- **Tests:** 17 Foundry fork tests, 42 Vitest unit tests
 - **Prior work:** A vibe-coded PoC was reviewed and its architectural issues documented in the PRD amendments (over-engineering, mock-heavy tests, daemon mode, local DB — all explicitly excluded from this build)
 - **Tooling:** Foundry (contracts), viem (bot), Biome.js (linting), vitest (testing)
 - **Multicall3:** `0xcA11bde05977b3631167028862bE2a173976CA11` for batched view calls
@@ -66,13 +69,13 @@ Kleros-backed, economically-secured reputation signals for ERC-8004 AI agents �
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Strategy A for agent resolution (key0 = agentId) | AgentId already in PGTCR item metadata; no admin overhead | Validated Phase 2 |
-| Tags: verified/removed + kleros-agent-registry | Generic tag1 enables cross-provider filtering; tag2 identifies Kleros source; future-proof for Reality proxy etc. | Validated Phase 3 |
-| Stateless diff architecture | No local DB needed; idempotency from architecture; prior PoC proved DB approach adds complexity without value | Validated Phase 3 |
-| One-shot bot, no daemon | External scheduler handles frequency; simpler ops; prior PoC's daemon mode was over-engineered | Validated Phase 2 |
-| Kleros v1 arbitrator | Current PGTCR uses v1; architecture supports future v2 migration | Validated Phase 1 |
-| History accumulates on re-registration | Agent removed then re-accepted shows mixed record (-95, +95); no revoke of old negative | Validated Phase 1 |
-| Upgradeable Router contract | Future multi-list and multi-product extensions without redeployment | Validated Phase 1 |
+| Strategy A for agent resolution (key0 = agentId) | AgentId already in PGTCR item metadata; no admin overhead | ✓ v1.0 — Phase 2 |
+| Tags: verified/removed + kleros-agent-registry | Generic tag1 enables cross-provider filtering; tag2 identifies Kleros source; future-proof for Reality proxy etc. | ✓ v1.0 — Phase 3 |
+| Stateless diff architecture | No local DB needed; idempotency from architecture; prior PoC proved DB approach adds complexity without value | ✓ v1.0 — Phase 3 |
+| One-shot bot, no daemon | External scheduler handles frequency; simpler ops; prior PoC's daemon mode was over-engineered | ✓ v1.0 — Phase 2 |
+| Kleros v1 arbitrator | Current PGTCR uses v1; architecture supports future v2 migration | ✓ v1.0 — Phase 1 |
+| History accumulates on re-registration | Agent removed then re-accepted shows mixed record (-95, +95); no revoke of old negative | ✓ v1.0 — Phase 1 |
+| Upgradeable Router contract | Future multi-list and multi-product extensions without redeployment | ✓ v1.0 — Phase 1 |
 
 ## Evolution
 
@@ -92,4 +95,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-27 after Phase 3 completion — all v1.0 milestone requirements validated*
+*Last updated: 2026-03-27 after v1.0 milestone completion*
