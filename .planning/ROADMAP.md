@@ -66,7 +66,7 @@ Plans:
 
 Plans:
 - [x] 03-01-PLAN.md -- Verify.s.sol Forge script for getSummary assertions and tag filtering (VER-01, VER-02, VER-03, VER-04)
-- [ ] 03-02-PLAN.md -- E2E execution: deploy Router, run bot, verify results, capture evidence report (VER-01, VER-02, VER-03, VER-04)
+- [x] 03-02-PLAN.md -- E2E execution: deploy Router, run bot, verify results, capture evidence report (VER-01, VER-02, VER-03, VER-04)
 
 ## Progress
 
