@@ -1,26 +1,18 @@
 ---
 phase: 01-router-contract-on-chain-setup
 verified: 2026-03-25T02:00:00Z
-status: human_needed
-score: 13/14 must-haves verified
+status: passed
+score: 14/14 must-haves verified
 re_verification: false
-human_verification:
-  - test: "Run forge test --fork-url $SEPOLIA_RPC_URL -vv in contracts/"
-    expected: "All 17 tests pass against forked Sepolia state"
-    why_human: "SEPOLIA_RPC_URL not available in automated environment; test runner requires live fork connection"
-  - test: "Run deploy script dry-run: BOT_ADDRESS=0x1 forge script script/Deploy.s.sol --rpc-url $SEPOLIA_RPC_URL --private-key <key> from contracts/"
-    expected: "All 4 steps execute (no SKIPs), deployment summary prints proxy address, agentId, and bot authorization status"
-    why_human: "Actual Sepolia deployment requires funded wallet and RPC access"
-  - test: "After broadcast deployment, confirm router.klerosAgentId() != 0 and router.authorizedBots(<bot>) == true on Sepolia"
-    expected: "klerosAgentId is non-zero, bot is authorized, owner is deployer"
-    why_human: "Requires live Sepolia RPC call against the deployed proxy address"
+human_verification_resolved: 2026-03-27
+human_verification_evidence: "All items resolved during Phase 3 E2E — fork tests 17/17 pass, Router deployed at 0x9ad77EBB8c1c206168B5838eF8cbeC82cEA7c30a, bot authorized, getSummary confirmed on-chain"
 ---
 
 # Phase 1: Router Contract & On-Chain Setup Verification Report
 
 **Phase Goal:** All on-chain infrastructure is deployed, configured, and tested -- Router contract handles all three feedback scenarios, Kleros identity is registered, and bot address is authorized
 **Verified:** 2026-03-25T02:00:00Z
-**Status:** human_needed
+**Status:** passed
 **Re-verification:** No -- initial verification
 
 ## Goal Achievement
@@ -29,13 +21,13 @@ human_verification:
 
 | #  | Truth | Status | Evidence |
 |----|-------|--------|----------|
-| 1  | Router is deployed on Sepolia as a UUPS proxy and can be called via its proxy address | ? HUMAN | Deploy script compiles and implements all steps; actual broadcast to Sepolia is a human-gate checkpoint (Plan 03 Task 2 pending) |
-| 2  | Calling `submitPositiveFeedback` creates a +95 feedback entry on the ReputationRegistry (verified via direct Registry read) | ? HUMAN | Fork test `test_submitPositiveFeedback_createsPositiveEntry` asserts count=1, value=95 via getSummary; requires live fork to execute |
-| 3  | Calling `submitNegativeFeedback` revokes the prior positive and creates a -95 entry (not an average of +95 and -95) | ? HUMAN | Fork test `test_submitNegativeFeedback_revokesPositiveThenSubmitsNegative` asserts count=1, value=-95; requires live fork to execute |
-| 4  | Calling `revokeOnly` removes existing feedback without creating new entries | ? HUMAN | Fork test `test_revokeOnly_removesPositiveFeedback` asserts count=0 after revoke; requires live fork to execute |
-| 5  | Kleros is registered as an 8004 agent and the Router is configured with the correct klerosAgentId, registry addresses, and authorized bot | ? HUMAN | Deploy script covers all four SETUP steps with idempotency; actual execution pending human approval |
+| 1  | Router is deployed on Sepolia as a UUPS proxy and can be called via its proxy address | VERIFIED | Deployed at `0x9ad77EBB8c1c206168B5838eF8cbeC82cEA7c30a` during Phase 3 E2E (2026-03-27) |
+| 2  | Calling `submitPositiveFeedback` creates a +95 feedback entry on the ReputationRegistry (verified via direct Registry read) | VERIFIED | Fork test passes (17/17); live E2E: Verify.s.sol confirms getSummary(count=1, value=95) for 4 agents |
+| 3  | Calling `submitNegativeFeedback` revokes the prior positive and creates a -95 entry (not an average of +95 and -95) | VERIFIED | Fork test `test_submitNegativeFeedback_revokesPositiveThenSubmitsNegative` passes, asserts count=1 value=-95 |
+| 4  | Calling `revokeOnly` removes existing feedback without creating new entries | VERIFIED | Fork test `test_revokeOnly_removesPositiveFeedback` passes, asserts count=0 |
+| 5  | Kleros is registered as an 8004 agent and the Router is configured with the correct klerosAgentId, registry addresses, and authorized bot | VERIFIED | Confirmed on-chain: klerosAgentId != 0, bot authorized, owner = deployer |
 
-**Score (automated):** 0/5 success criteria verifiable without live Sepolia RPC. All contract artifacts and logic are fully implemented and verified below.
+**Score:** 5/5 success criteria verified. All human-gated items resolved during Phase 3 E2E (2026-03-27).
 
 ### Required Artifacts
 
@@ -104,25 +96,13 @@ Not applicable -- this phase produces on-chain contracts and scripts, not data-r
 
 No stub patterns, placeholder returns, or unimplemented functions found in any file.
 
-### Human Verification Required
+### Human Verification — Resolved
 
-#### 1. Fork Test Suite Execution
+All human-gated items were resolved during Phase 3 E2E execution (2026-03-27):
 
-**Test:** Set `SEPOLIA_RPC_URL` to a working Sepolia endpoint (e.g., `https://ethereum-sepolia-rpc.publicnode.com` per Plan 02 decision), then run `cd contracts && forge test -vv` from the project root.
-**Expected:** All 17 tests pass. Key assertions: Scenario 1 getSummary returns count=1 value=95; Scenario 2 returns count=1 value=-95; Scenario 3 returns count=0; re-registration produces count=2; all unauthorized calls revert.
-**Why human:** SEPOLIA_RPC_URL is not available in this automated environment. Fork tests require a live Ethereum RPC connection to fork Sepolia state.
-
-#### 2. Deploy Script Dry-Run
-
-**Test:** Set env vars `SEPOLIA_RPC_URL`, `BOT_ADDRESS=0x0000000000000000000000000000000000000001`, then run `cd contracts && forge script script/Deploy.s.sol --rpc-url $SEPOLIA_RPC_URL --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80` (Foundry default test key for simulation).
-**Expected:** Output shows "Step 1: Deploying Router...", "Step 2: Registering Kleros agent...", "Step 3: Setting klerosAgentId...", "Step 4: Authorizing bot address...", and a deployment summary with proxy address, agentId, and bot authorization = true.
-**Why human:** Requires Sepolia RPC; simulation uses on-chain state from Sepolia fork.
-
-#### 3. Live Deployment to Sepolia
-
-**Test:** Broadcast the deploy script with a real funded deployer wallet, then verify on-chain state: `cast call <proxy> "klerosAgentId()(uint256)" --rpc-url $SEPOLIA_RPC_URL` returns non-zero, and `cast call <proxy> "authorizedBots(address)(bool)" <bot> --rpc-url $SEPOLIA_RPC_URL` returns true.
-**Expected:** klerosAgentId is non-zero, bot is authorized, Router owner is deployer address.
-**Why human:** Requires funded Sepolia wallet for gas; one-time setup action that creates persistent on-chain state.
+1. **Fork tests:** 17/17 pass with `SEPOLIA_RPC_URL=https://ethereum-sepolia-rpc.publicnode.com`
+2. **Deploy script:** Broadcast to Sepolia — Router proxy at `0x9ad77EBB8c1c206168B5838eF8cbeC82cEA7c30a`
+3. **On-chain state:** `klerosAgentId != 0`, bot authorized, owner = `0x82695B1FFA1e446b636247e44c2aAFd3Fe2CD426`
 
 ### Gaps Summary
 
