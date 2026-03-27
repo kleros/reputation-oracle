@@ -75,6 +75,37 @@ forge script script/Deploy.s.sol --rpc-url $SEPOLIA_RPC_URL --private-key $DEPLO
 ROUTER_PROXY_ADDRESS=0x... forge script script/Deploy.s.sol --rpc-url $SEPOLIA_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY --broadcast
 ```
 
+### Etherscan verification
+
+**Option 1: During deployment** (recommended)
+
+Add `--verify` and `--etherscan-api-key` to the broadcast command:
+
+```bash
+forge script script/Deploy.s.sol \
+  --rpc-url $SEPOLIA_RPC_URL \
+  --private-key $DEPLOYER_PRIVATE_KEY \
+  --broadcast \
+  --verify \
+  --etherscan-api-key $ETHERSCAN_API_KEY
+```
+
+Forge auto-verifies all deployed contracts (implementation + proxy) in the same run.
+
+**Option 2: Post-deployment**
+
+If already deployed without `--verify`:
+
+```bash
+# Verify the implementation contract
+forge verify-contract <IMPLEMENTATION_ADDRESS> \
+  src/KlerosReputationRouter.sol:KlerosReputationRouter \
+  --chain sepolia \
+  --etherscan-api-key $ETHERSCAN_API_KEY
+```
+
+The ERC1967 proxy is auto-detected by Etherscan.
+
 ## File structure
 
 ```
