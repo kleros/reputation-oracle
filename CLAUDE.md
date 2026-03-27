@@ -78,12 +78,12 @@ See [`contracts/README.md`](./contracts/README.md) for deployed addresses and de
 | TypeScript | ^5.7 | Bot language (viem requires strict TS) |
 | Node.js | 22 LTS | Runtime (native `--env-file`, stable fetch) |
 | viem | ^2.47 | Ethereum client (type-safe, native Multicall3) |
-| zod | ^3.24 | Config validation with secret redaction |
+| zod | ^4.3 | Config validation with secret redaction |
 | graphql-request | ^7.4 | Subgraph queries |
 | tsx | ^4.21 | TypeScript execution |
 | @openzeppelin/contracts | ^5.6 | UUPS proxy for upgradeable Router |
-| Biome.js | ^1.9 | Linting + formatting (replaces ESLint + Prettier) |
-| vitest | ^3.1 | Bot unit/integration tests |
+| Biome.js | ^2.4 | Linting + formatting (replaces ESLint + Prettier) |
+| vitest | ^4.1 | Bot unit/integration tests |
 
 **Do NOT use:** ethers.js v5 (deprecated), dotenv (Node 22 has `--env-file`), hardhat (use Foundry), axios (use native fetch), any local DB (stateless architecture), transparent proxy (use UUPS).
 
