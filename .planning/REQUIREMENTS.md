@@ -39,10 +39,10 @@
 
 ### Verification
 
-- [ ] **VER-01**: After Scenario 1, `getSummary(agentId, [router], "", "")` returns `count=1, value=95`
-- [ ] **VER-02**: After Scenario 2, `getSummary(agentId, [router], "", "")` returns `count=1, value=-95`
-- [ ] **VER-03**: After Scenario 3, `getSummary(agentId, [router], "", "")` returns `count=0`
-- [ ] **VER-04**: Tag filtering works — `getSummary` with tag1="verified" vs "removed" returns filtered results
+- [x] **VER-01**: After Scenario 1, `getSummary(agentId, [router], "", "")` returns `count=1, value=95`
+- [x] **VER-02**: After Scenario 2, `getSummary(agentId, [router], "", "")` returns `count=1, value=-95`
+- [x] **VER-03**: After Scenario 3, `getSummary(agentId, [router], "", "")` returns `count=0`
+- [x] **VER-04**: Tag filtering works — `getSummary` with tag1="verified" vs "removed" returns filtered results
 
 ## v2 Requirements
 
@@ -107,10 +107,10 @@
 | SETUP-02 | Phase 1 | Pending |
 | SETUP-03 | Phase 1 | Pending |
 | SETUP-04 | Phase 1 | Pending |
-| VER-01 | Phase 3 | Pending |
-| VER-02 | Phase 3 | Pending |
-| VER-03 | Phase 3 | Pending |
-| VER-04 | Phase 3 | Pending |
+| VER-01 | Phase 3 | Complete |
+| VER-02 | Phase 3 | Complete |
+| VER-03 | Phase 3 | Complete |
+| VER-04 | Phase 3 | Complete |
 
 **Coverage:**
 - v1 requirements: 27 total
