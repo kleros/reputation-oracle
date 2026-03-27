@@ -24,3 +24,14 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 | 1. Router Contract & On-Chain Setup | v1.0 | 3/3 | Complete | 2026-03-25 |
 | 2. Stateless Bot | v1.0 | 4/4 | Complete | 2026-03-26 |
 | 3. End-to-End Verification | v1.0 | 2/2 | Complete | 2026-03-27 |
+
+## Backlog
+
+### Phase 999.1: Upgrade bot dependencies to latest majors (BACKLOG)
+
+**Goal:** Upgrade zod v3→v4, Biome.js v1→v2, vitest v3→v4. Aligns with other Kleros projects already on these versions.
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd:review-backlog when ready)
