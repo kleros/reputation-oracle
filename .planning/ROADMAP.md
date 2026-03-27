@@ -24,7 +24,7 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 | 1. Router Contract & On-Chain Setup | v1.0 | 3/3 | Complete | 2026-03-25 |
 | 2. Stateless Bot | v1.0 | 4/4 | Complete | 2026-03-26 |
 | 3. End-to-End Verification | v1.0 | 2/2 | Complete | 2026-03-27 |
-| 1000. Upgrade bot deps | — | 0/2 | Planned | — |
+| 1000. Upgrade bot deps | — | 1/2 | In Progress | — |
 
 ### Phase 1000: Upgrade bot dependencies to latest majors
 
@@ -34,7 +34,7 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 **Plans:** 2 plans
 
 Plans:
-- [ ] 1000-01-PLAN.md — Upgrade zod v4 + vitest v4 (zero code changes)
+- [x] 1000-01-PLAN.md — Upgrade zod v4 + vitest v4 (zero code changes) — completed 2026-03-27
 - [ ] 1000-02-PLAN.md — Upgrade Biome v2 (config migration + lint fixes) + update CLAUDE.md
 
 ## Backlog
