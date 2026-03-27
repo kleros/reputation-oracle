@@ -1,10 +1,10 @@
 import {
-	http,
 	type Chain,
+	http,
 	type PublicClient,
-	type WalletClient,
 	createPublicClient as viemCreatePublicClient,
 	createWalletClient as viemCreateWalletClient,
+	type WalletClient,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { routerAbi } from "./abi/router.js";

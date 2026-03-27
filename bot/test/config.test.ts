@@ -44,7 +44,7 @@ describe("configSchema", () => {
 	});
 
 	it("does not expose BOT_PRIVATE_KEY in error output", () => {
-		const badKey = `0x${"ff".repeat(32)}`;
+		const _badKey = `0x${"ff".repeat(32)}`;
 		const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
 		// Use a bad env but with a valid-looking private key that we want to make sure isn't leaked
