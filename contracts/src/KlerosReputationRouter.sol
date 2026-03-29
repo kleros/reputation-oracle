@@ -45,6 +45,7 @@ contract KlerosReputationRouter is Initializable, UUPSUpgradeable, OwnableUpgrad
     event NegativeFeedbackSubmitted(uint256 indexed agentId, uint64 feedbackIndex);
     event FeedbackRevoked(uint256 indexed agentId);
     event BotAuthorizationChanged(address indexed bot, bool authorized);
+    event AgentRegistered(uint256 indexed agentId, string agentURI);
 
     // ─── Custom Errors ──────────────────────────────────────────────────────────
 
@@ -175,6 +176,15 @@ contract KlerosReputationRouter is Initializable, UUPSUpgradeable, OwnableUpgrad
     /// @param _identityRegistry The new IdentityRegistry address.
     function setIdentityRegistry(address _identityRegistry) external onlyOwner {
         identityRegistry = IIdentityRegistry(_identityRegistry);
+    }
+
+    /// @notice Register this Router as an agent on the IdentityRegistry and store the agentId.
+    /// @param agentURI URI to agent metadata JSON.
+    /// @return agentId The newly registered agent ID.
+    function registerAgent(string calldata agentURI) external onlyOwner returns (uint256 agentId) {
+        agentId = identityRegistry.register(agentURI);
+        klerosAgentId = agentId;
+        emit AgentRegistered(agentId, agentURI);
     }
 
     // ─── UUPS ───────────────────────────────────────────────────────────────────

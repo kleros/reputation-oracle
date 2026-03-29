@@ -4,15 +4,13 @@ pragma solidity ^0.8.20;
 import {Script, console} from "forge-std/Script.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {KlerosReputationRouter} from "../src/KlerosReputationRouter.sol";
-import {IIdentityRegistry} from "../src/interfaces/IIdentityRegistry.sol";
 
 /// @title Deploy
 /// @notice Idempotent deploy + setup orchestrator for the KlerosReputationRouter.
 /// @dev Performs four steps in sequence, skipping any that are already completed:
 ///   1. Deploy Router implementation + ERC1967 UUPS proxy (SETUP-01)
-///   2. Register Kleros agent on IdentityRegistry (SETUP-02)
-///   3. Configure Router with klerosAgentId (SETUP-03)
-///   4. Authorize bot address on Router (SETUP-04)
+///   2. Register Kleros agent via Router (SETUP-02)
+///   3. Authorize bot address on Router (SETUP-04)
 ///
 /// Usage:
 ///   # Required env vars:
@@ -63,28 +61,23 @@ contract Deploy is Script {
             router = KlerosReputationRouter(proxyAddress);
         }
 
-        // ─── Step 2: Register Kleros agent on IdentityRegistry (SETUP-02) ───────
+        // ─── Step 2: Register Kleros agent via Router (SETUP-02) ─────────────────
         if (router.klerosAgentId() == 0) {
-            console.log("Step 2: Registering Kleros agent on IdentityRegistry...");
-            uint256 agentId = IIdentityRegistry(IDENTITY_REGISTRY).register(klerosAgentURI);
+            console.log("Step 2: Registering Kleros agent via Router...");
+            uint256 agentId = router.registerAgent(klerosAgentURI);
             console.log("  Kleros agentId:", agentId);
-
-            // ─── Step 3: Configure Router with agentId (SETUP-03) ────────────────
-            console.log("Step 3: Setting klerosAgentId on Router...");
-            router.setKlerosAgentId(agentId);
-            console.log("  klerosAgentId set to:", agentId);
+            console.log("  Agent owner (Router):", address(router));
         } else {
             console.log("Step 2: SKIP - Kleros agent already registered, agentId:", router.klerosAgentId());
-            console.log("Step 3: SKIP - klerosAgentId already configured");
         }
 
-        // ─── Step 4: Authorize bot address (SETUP-04) ───────────────────────────
+        // ─── Step 3: Authorize bot address (SETUP-04) ───────────────────────────
         if (!router.authorizedBots(botAddress)) {
-            console.log("Step 4: Authorizing bot address...");
+            console.log("Step 3: Authorizing bot address...");
             router.setAuthorizedBot(botAddress, true);
             console.log("  Bot authorized:", botAddress);
         } else {
-            console.log("Step 4: SKIP - Bot already authorized:", botAddress);
+            console.log("Step 3: SKIP - Bot already authorized:", botAddress);
         }
 
         vm.stopBroadcast();
