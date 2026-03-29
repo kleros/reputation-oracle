@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 
 import {IReputationRegistry} from "./interfaces/IReputationRegistry.sol";
 import {IIdentityRegistry} from "./interfaces/IIdentityRegistry.sol";
@@ -11,7 +12,7 @@ import {IIdentityRegistry} from "./interfaces/IIdentityRegistry.sol";
 /// @title KlerosReputationRouter
 /// @notice Routes Kleros PGTCR curation events to ERC-8004 reputation feedback.
 /// @dev Deployed as a UUPS proxy. The Router is the `clientAddress` for ReputationRegistry.
-contract KlerosReputationRouter is Initializable, UUPSUpgradeable, OwnableUpgradeable {
+contract KlerosReputationRouter is Initializable, UUPSUpgradeable, OwnableUpgradeable, IERC721Receiver {
     // ─── Enums ──────────────────────────────────────────────────────────────────
 
     /// @notice Tracks the current feedback state for each agentId.
@@ -191,6 +192,13 @@ contract KlerosReputationRouter is Initializable, UUPSUpgradeable, OwnableUpgrad
 
     /// @dev Only the owner can authorize upgrades.
     function _authorizeUpgrade(address) internal override onlyOwner {}
+
+    // ─── ERC-721 Receiver ──────────────────────────────────────────────────────
+
+    /// @dev Required for IdentityRegistry.register() which uses ERC-721 safeMint.
+    function onERC721Received(address, address, uint256, bytes calldata) external pure override returns (bytes4) {
+        return IERC721Receiver.onERC721Received.selector;
+    }
 
     // ─── Storage Gap ────────────────────────────────────────────────────────────
 

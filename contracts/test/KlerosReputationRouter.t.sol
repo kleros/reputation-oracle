@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {Test} from "forge-std/Test.sol";
+import {Test, Vm} from "forge-std/Test.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {KlerosReputationRouter} from "../src/KlerosReputationRouter.sol";
 import {IReputationRegistry} from "../src/interfaces/IReputationRegistry.sol";
@@ -330,5 +330,81 @@ contract KlerosReputationRouterTest is Test {
         vm.prank(bot);
         vm.expectRevert(abi.encodeWithSelector(KlerosReputationRouter.KRR_NotAuthorizedBot.selector));
         router.submitPositiveFeedback(agentId2, bytes32("testItem2"), "ipfs://test2");
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════════
+    // Agent Registration
+    // ═════════════════════════════════════════════════════════════════════════════
+
+    function test_registerAgent_setsKlerosAgentId() public {
+        vm.prank(owner);
+        router.registerAgent("https://kleros-agent.example.com");
+
+        assertGt(router.klerosAgentId(), 0, "klerosAgentId should be non-zero after registration");
+    }
+
+    function test_registerAgent_routerOwnsAgent() public {
+        vm.prank(owner);
+        uint256 agentId = router.registerAgent("https://kleros-agent.example.com");
+
+        assertEq(
+            IIdentityRegistry(IDENTITY_REGISTRY).ownerOf(agentId),
+            address(router),
+            "Router should be ownerOf the registered agentId"
+        );
+    }
+
+    function test_registerAgent_emitsEvent() public {
+        vm.prank(owner);
+        vm.recordLogs();
+        uint256 agentId = router.registerAgent("https://kleros-agent.example.com");
+
+        // Verify the AgentRegistered event was emitted
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        bool found = false;
+        bytes32 eventSig = keccak256("AgentRegistered(uint256,string)");
+        for (uint256 i = 0; i < entries.length; i++) {
+            if (entries[i].topics[0] == eventSig) {
+                assertEq(uint256(entries[i].topics[1]), agentId, "event agentId should match");
+                found = true;
+                break;
+            }
+        }
+        assertTrue(found, "AgentRegistered event should be emitted");
+    }
+
+    function test_registerAgent_revertsForNonOwner() public {
+        vm.prank(unauthorized);
+        vm.expectRevert();
+        router.registerAgent("https://kleros-agent.example.com");
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════════
+    // UUPS Upgrade
+    // ═════════════════════════════════════════════════════════════════════════════
+
+    function test_upgrade_preservesState() public {
+        uint256 agentId = _registerTestAgent();
+
+        // Submit positive feedback to populate state
+        vm.prank(bot);
+        router.submitPositiveFeedback(agentId, bytes32("testItem"), "ipfs://test-positive");
+
+        // Record pre-upgrade state
+        uint8 preType = uint8(router.feedbackType(agentId));
+        uint64 preIndex = router.feedbackIndex(agentId);
+        uint256 preKlerosAgentId = router.klerosAgentId();
+
+        // Deploy new implementation and upgrade
+        KlerosReputationRouter newImpl = new KlerosReputationRouter();
+        vm.prank(owner);
+        router.upgradeToAndCall(address(newImpl), "");
+
+        // Verify state preserved after upgrade
+        assertEq(uint8(router.feedbackType(agentId)), preType, "feedbackType should be preserved");
+        assertEq(router.feedbackIndex(agentId), preIndex, "feedbackIndex should be preserved");
+        assertEq(router.klerosAgentId(), preKlerosAgentId, "klerosAgentId should be preserved");
+        assertEq(router.owner(), owner, "owner should be preserved");
+        assertTrue(router.authorizedBots(bot), "bot authorization should be preserved");
     }
 }
