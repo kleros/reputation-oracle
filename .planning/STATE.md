@@ -92,8 +92,14 @@ None yet.
 - [Research]: Pitfall 3 (non-atomic revoke-then-negative) must be handled in Router design
 - [Research]: ERC-8004 giveFeedback return value needs verification against deployed Sepolia contract
 
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Status | Directory |
+|---|-------------|------|--------|--------|-----------|
+| 260329-mxh | Fix agent registration — move IdentityRegistry.register into Router so Router owns klerosAgentId | 2026-03-29 | 5fba9c0 | Verified | [260329-mxh-fix-agent-registration-move-identityregi](./quick/260329-mxh-fix-agent-registration-move-identityregi/) |
+
 ## Session Continuity
 
-Last session: 2026-03-27T13:48:20.889Z
-Stopped at: Completed 1000-02-PLAN.md
+Last session: 2026-03-29T14:30:34.210Z
+Stopped at: Completed quick task 260329-mxh: Fix agent registration
 Resume file: None
