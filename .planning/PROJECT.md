@@ -50,7 +50,7 @@ Kleros-backed, economically-secured reputation signals for ERC-8004 AI agents �
 - **Arbitrator:** Kleros v1 on Ethereum
 - **Agent resolution:** Strategy A — metadata.key0 = numeric agentId, metadata.key2 = CAIP-10 chain validation
 - **PGTCR model:** CAIP-10 multi-chain item registrations, one list on Sepolia for testing, one on Mainnet (not yet deployed) for all production chains
-- **Router proxy:** [`0x9ad77EBB8c1c206168B5838eF8cbeC82cEA7c30a`](https://sepolia.etherscan.io/address/0x9ad77EBB8c1c206168B5838eF8cbeC82cEA7c30a) (Sepolia)
+- **Router proxy:** [`0xc770c4F43f84c9e010aE0Ade51be914372B7Cc02`](https://sepolia.etherscan.io/address/0xc770c4F43f84c9e010aE0Ade51be914372B7Cc02) (Sepolia)
 - **Codebase:** ~2,000 LOC (809 Solidity, 695 TypeScript, 493 test TypeScript)
 - **Tests:** 17 Foundry fork tests, 42 Vitest unit tests
 - **Prior work:** A vibe-coded PoC was reviewed and its architectural issues documented in the PRD amendments (over-engineering, mock-heavy tests, daemon mode, local DB — all explicitly excluded from this build)

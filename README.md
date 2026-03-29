@@ -34,7 +34,7 @@ The bot reads the current state of the registry and the chain, computes the diff
 
 | Contract | Address |
 |----------|---------|
-| **KlerosReputationRouter** | [`0x9ad77EBB8c1c206168B5838eF8cbeC82cEA7c30a`](https://sepolia.etherscan.io/address/0x9ad77EBB8c1c206168B5838eF8cbeC82cEA7c30a) |
+| **KlerosReputationRouter** | [`0xc770c4F43f84c9e010aE0Ade51be914372B7Cc02`](https://sepolia.etherscan.io/address/0xc770c4F43f84c9e010aE0Ade51be914372B7Cc02) |
 | ERC-8004 ReputationRegistry | [`0x8004B663056A597Dffe9eCcC1965A193B7388713`](https://sepolia.etherscan.io/address/0x8004B663056A597Dffe9eCcC1965A193B7388713) |
 | ERC-8004 IdentityRegistry | [`0x8004A818BFB912233c491871b3d84c89A494BD9e`](https://sepolia.etherscan.io/address/0x8004A818BFB912233c491871b3d84c89A494BD9e) |
 | PGTCR Verified Agents List | [`0x3162df9669affa8b6b6ff2147afa052249f00447`](https://curate.kleros.io/tcr/11155111/0x3162df9669affa8b6b6ff2147afa052249f00447) |
