@@ -53,26 +53,26 @@ Requirements for production hardening milestone. Each maps to roadmap phases.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| LOG-01 | Pending | Pending |
-| LOG-02 | Pending | Pending |
-| LOG-03 | Pending | Pending |
-| LOG-04 | Pending | Pending |
-| LOG-05 | Pending | Pending |
-| TXSAFE-01 | Pending | Pending |
-| TXSAFE-02 | Pending | Pending |
-| TXSAFE-03 | Pending | Pending |
-| TXSAFE-04 | Pending | Pending |
-| IPFS-01 | Pending | Pending |
-| IPFS-02 | Pending | Pending |
-| IPFS-03 | Pending | Pending |
-| IPFS-04 | Pending | Pending |
-| IPFS-05 | Pending | Pending |
+| LOG-01 | Phase 4 | Pending |
+| LOG-02 | Phase 4 | Pending |
+| LOG-03 | Phase 4 | Pending |
+| LOG-04 | Phase 4 | Pending |
+| LOG-05 | Phase 4 | Pending |
+| TXSAFE-01 | Phase 5 | Pending |
+| TXSAFE-02 | Phase 5 | Pending |
+| TXSAFE-03 | Phase 5 | Pending |
+| TXSAFE-04 | Phase 5 | Pending |
+| IPFS-01 | Phase 6 | Pending |
+| IPFS-02 | Phase 6 | Pending |
+| IPFS-03 | Phase 6 | Pending |
+| IPFS-04 | Phase 6 | Pending |
+| IPFS-05 | Phase 6 | Pending |
 
 **Coverage:**
 - v1.1 requirements: 14 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 14
+- Mapped to phases: 14/14
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-30*
-*Last updated: 2026-03-30 after initial definition*
+*Last updated: 2026-03-30 after roadmap creation*

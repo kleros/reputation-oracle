@@ -2,11 +2,11 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Production Hardening
-status: Defining requirements
-stopped_at: Milestone v1.1 started
+status: Ready to plan
+stopped_at: Roadmap created for v1.1
 last_updated: "2026-03-30T00:00:00.000Z"
 progress:
-  total_phases: 0
+  total_phases: 3
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -20,14 +20,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-30)
 
 **Core value:** Kleros-backed, economically-secured reputation signals for ERC-8004 AI agents
-**Current focus:** v1.1 Production Hardening — IPFS evidence, tx safety, structured logging
+**Current focus:** v1.1 Production Hardening — Phase 4: Structured Logging
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-03-30 — Milestone v1.1 started
+Phase: 4 of 6 (Structured Logging)
+Plan: — (not yet planned)
+Status: Ready to plan
+Last activity: 2026-03-30 — Roadmap created for v1.1
 
 Progress: [░░░░░░░░░░░░░░░░░░░░] 0%
 
@@ -35,7 +35,7 @@ Progress: [░░░░░░░░░░░░░░░░░░░░] 0%
 
 **Velocity:**
 
-- Total plans completed: 0
+- Total plans completed: 0 (v1.1)
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -45,18 +45,16 @@ Progress: [░░░░░░░░░░░░░░░░░░░░] 0%
 |-------|-------|-------|----------|
 | - | - | - | - |
 
-**Recent Trend:**
+**Recent Trend (from v1.0):**
 
-- Last 5 plans: -
-- Trend: -
-
-*Updated after each plan completion*
+| Phase | Duration | Tasks | Files |
+|-------|----------|-------|-------|
 | Phase 01 P02 | 4min | 2 tasks | 1 files |
 | Phase 02 P01 | 5min | 3 tasks | 12 files |
 | Phase 02 P03 | 4min | 2 tasks | 2 files |
 | Phase 02 P04 | 3min | 1 tasks | 1 files |
-| Phase 03-end-to-end-verification P01 | 2min | 1 tasks | 1 files |
-| Phase 03-end-to-end-verification P02 | 30min | 3 tasks | 1 files |
+| Phase 03 P01 | 2min | 1 tasks | 1 files |
+| Phase 03 P02 | 30min | 3 tasks | 1 files |
 | Phase 1000 P01 | 2min | 2 tasks | 2 files |
 | Phase 1000 P02 | 2min | 2 tasks | 6 files |
 
@@ -67,19 +65,10 @@ Progress: [░░░░░░░░░░░░░░░░░░░░] 0%
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- [Roadmap]: 3 coarse phases -- contract first (ABI dependency), bot second, verification last
-- [Roadmap]: SETUP-01..04 merged into Phase 1 since all Foundry/on-chain work belongs together
-- [Roadmap]: VER-01..04 as separate Phase 3 -- proves the full pipeline works end-to-end
-- [Phase 01]: Fork tests use publicnode Sepolia RPC; each test registers fresh agent; getSummary with empty tags as primary verification
-- [Phase 02]: Used zod v3, biome v1.9, vitest v3 (stable) instead of planned v4/v2.4/v4.1 (not yet released)
-- [Phase 02]: Evidence tags use verified/removed matching Router constants per CLAUDE.md, not curate-verified/curate-removed from PRD
-- [Phase 02]: batchSize 1024*200 bytes for Multicall3 (bytes not call count per Pitfall 7)
-- [Phase 02]: Failed multicall reads default to FeedbackType.None (conservative approach)
-- [Phase 02]: BigInt serialized as string in dry-run JSON output
-- [Phase 03-end-to-end-verification]: Scenario 1 assertions only for live verification; Scenarios 2/3 proven via fork tests
-- [Phase 03-end-to-end-verification]: E2E pipeline proven on Sepolia: bot submits correct feedback, Verify.s.sol confirms getSummary values, idempotency verified
-- [Phase 1000]: Zero code changes for zod v4 and vitest v4 upgrades -- all APIs backward-compatible as predicted by research
-- [Phase 1000]: Used Biome automated migrate tool for v1-to-v2 config migration
+- [Roadmap v1.1]: 3 coarse phases — Logging first (foundation), Tx Safety second (existing gaps), IPFS last (most complex, depends on logger)
+- [Roadmap v1.1]: Integration testing folded into each phase (coarse granularity) rather than separate phase
+- [Research]: pino chosen over custom logger — redaction and child loggers justify the dependency
+- [Research]: Prepare/execute split for IPFS — upload all CIDs before submitting any transactions
 
 ### Pending Todos
 
@@ -87,9 +76,8 @@ None yet.
 
 ### Blockers/Concerns
 
-- [Research]: Pitfall 8 (re-registration state model) must be resolved before Phase 1 implementation -- boolean vs enum for feedback tracking
-- [Research]: Pitfall 3 (non-atomic revoke-then-negative) must be handled in Router design
-- [Research]: ERC-8004 giveFeedback return value needs verification against deployed Sepolia contract
+- [Research]: Pinata rate limit behavior on specific plan tier — validate during Phase 6 planning
+- [Research]: Prepare/execute split granularity — should revoke-only actions (no evidence) execute immediately?
 
 ### Quick Tasks Completed
 
@@ -99,6 +87,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-29T23:20:04.517Z
-Stopped at: Milestone v1.0 summary generated
-Resume file: .planning/reports/MILESTONE_SUMMARY-v1.0.md
+Last session: 2026-03-30
+Stopped at: Roadmap created for v1.1 Production Hardening
+Resume file: None
