@@ -1,174 +1,168 @@
 # Project Research Summary
 
-**Project:** Kleros Reputation Oracle
-**Domain:** Subgraph-to-chain oracle / PGTCR curation events to ERC-8004 on-chain reputation
-**Researched:** 2026-03-24
+**Project:** Kleros Reputation Oracle v1.1 Production Hardening
+**Domain:** Ethereum oracle bot -- IPFS evidence, transaction safety, structured logging
+**Researched:** 2026-03-30
 **Confidence:** HIGH
 
 ## Executive Summary
 
-The Kleros Reputation Oracle is an infrastructure system -- not a user-facing application -- that bridges Kleros PGTCR (Stake Curate) curation events into ERC-8004 on-chain reputation feedback. It consists of three components: a Solidity Router contract (the trusted `clientAddress`), a stateless TypeScript bot (diff engine), and a one-time Kleros 8004 identity registration. The entire business logic reduces to three scenarios: positive feedback for verified agents, revoke-then-negative for dispute removals, and revoke-only for voluntary withdrawals. Experts build this type of oracle as a stateless diff engine: read desired state from subgraph, read actual state from chain, compute the delta, execute the minimum set of transactions, exit. No local database, no daemon mode, no persistent state.
+v1.1 hardens the shipped v1.0 bot for production use. Three capabilities are added: IPFS evidence upload (replacing inline data: URIs with Pinata-pinned CIDs), transaction safety (gas estimation retry, balance preflight, SIGTERM handling, receipt timeout handling), and structured JSON logging (replacing console.log with machine-parseable NDJSON output). The existing stateless diff architecture is unchanged -- all work is additive, modifying the execute phase and cross-cutting logging concerns.
 
-The recommended approach is Foundry + viem + TypeScript on Node 22 LTS. The Router contract is the foundation -- everything depends on it. Build it first with UUPS upgradeability and storage gaps, deploy to Sepolia, then build the bot against its ABI. The bot's core is a pure function (`computeActions`) that takes two data sources and returns an action list. This function is trivially testable and contains all business logic. The architecture is well-specified in the PRD and amendments, with high confidence across all research areas.
+The recommended approach is dependency-minimal: only one new production dependency (pino for logging), zero new dependencies for IPFS (native fetch to Pinata REST API), and zero for transaction safety (viem built-ins + custom retry wrapper). The architecture introduces two new modules (ipfs.ts, tx.ts) and one cross-cutting module (logger.ts), with chain.ts and index.ts as the primary modification targets.
 
-The primary risks are: (1) the revoke-then-negative sequence (Scenario 2) is not atomic -- if revoke succeeds but negative fails, the agent ends up with zero reputation instead of -95, and the current diff logic has no recovery branch; (2) agent re-registration after dispute creates a state where the diff logic silently skips the agent forever; (3) subgraph indexing lag can temporarily show incorrect reputation. All three must be resolved in the Router contract design before coding begins, not deferred to later phases.
+The highest-risk area is IPFS upload inside the transaction loop. Pinata calls are network-dependent and rate-limited; inserting them into a nonce-managed sequential loop creates cascading failure modes. The mitigation is a prepare/execute split: upload all evidence before executing any transactions. Secondary risks are secret leakage in structured logs (Pinata JWT, private key in nested error objects) and retry logic turning the one-shot bot into a long-running process. Both are addressed by design constraints documented below.
 
 ## Key Findings
 
-### Recommended Stack
+### Stack Additions
 
-The stack is modern, well-integrated, and avoids legacy tools. Foundry for contracts (faster than Hardhat, native fork testing), viem for Ethereum interaction (type-safe, native Multicall3), TypeScript 5.7+ for the bot, Node 22 LTS (native `--env-file`, stable fetch). No dotenv, no ethers.js, no Hardhat. See [STACK.md](STACK.md) for full details.
+One production dependency, one dev dependency. Everything else uses existing packages or Node.js built-ins.
 
-**Core technologies:**
-- **Solidity ^0.8.20 + Foundry:** Router contract with UUPS proxy, custom errors, PUSH0 opcode support
-- **TypeScript ^5.7 + viem ^2.47:** Bot with type-safe ABI inference, native Multicall3 batching
-- **Node.js 22 LTS:** Native env-file loading, stable fetch API, LTS until 2027
-- **graphql-request ^7.4:** Lightweight subgraph queries with cursor-based pagination
-- **zod ^4.3:** Config validation with TypeScript inference and secret redaction
-- **Biome.js ^2.4 + vitest ^4.1:** Linting/formatting + testing (replaces ESLint/Prettier/Jest)
+| Package | Version | Purpose | Rationale |
+|---------|---------|---------|-----------|
+| pino | ^10.3 | Structured JSON logging | JSON-native, child loggers, redaction, 5x faster than winston |
+| pino-pretty | ^14.0 (dev) | Human-readable dev logs | Transforms NDJSON to colorized output during development |
 
-### Expected Features
+**No SDK for Pinata** -- native `fetch()` to `POST /pinning/pinJSONToIPFS` is sufficient for a single-endpoint use case. The `pinata` npm package pulls 230+ transitive dependencies for what is one HTTP call.
 
-See [FEATURES.md](FEATURES.md) for the complete feature landscape and dependency graph.
+**No retry library** -- exponential backoff is ~15 lines of code. `p-retry` is unnecessary.
 
-**Must have (table stakes -- system broken without these):**
-- All 3 scenario functions in Router (positive +95, revoke-then-negative -95, revoke-only)
-- Feedback state tracking (`hasFeedback`, `feedbackIndex` per agentId) for idempotent diffs
-- Duplicate prevention guards and bot authorization (`onlyAuthorizedBot`)
-- Subgraph polling with `id_gt` cursor pagination (never `skip`)
-- Multicall3 batched Router state reads
-- Stateless diff engine (`computeActions` pure function)
-- IPFS evidence upload before feedback calls
-- One-shot execution model (no daemon)
-- Config validation with fail-fast and secret redaction
+**Config additions:** `PINATA_JWT` (optional), `LOG_LEVEL` (optional, default: info).
 
-**Should have (production robustness):**
-- Transaction safety: gas estimation retryable, tx submission NOT retryable
-- Balance preflight check (fail fast on insufficient gas)
-- Subgraph data validation (skip malformed items, don't crash)
-- Upgradeable Router (UUPS proxy with storage gaps)
-- Graceful shutdown (SIGTERM/SIGINT handling)
+**Conflict resolution:** STACK.md recommends pino. ARCHITECTURE.md suggests a 30-line custom logger. Recommendation: **use pino**. The redaction feature alone (needed for Pitfall 2/11 -- secret leakage) justifies the dependency. Child loggers for per-action context and `pino.final()` for shutdown flushing are production necessities that would be reimplemented poorly in a custom solution. Write logs to stderr to preserve stdout for dry-run output.
 
-**Defer (v2+):**
-- Multi-list support (wait for second PGTCR list)
-- Multi-chain deployment tooling (wait for mainnet)
-- Batched write transactions (wait for gas cost pressure)
-- Curate v2 / Kleros v2 arbitrator support (pending Q7 resolution)
+### Feature Table Stakes
 
-### Architecture Approach
+**Must have (all planned for v1.1):**
+1. Structured JSON logging (pino) -- foundation; all other features depend on it
+2. IPFS evidence upload via Pinata -- replaces gas-expensive data: URIs with ipfs:// CIDs
+3. Per-item IPFS failure isolation -- skip failed uploads, do not block the run
+4. Balance preflight check -- prevent wasted gas on empty wallet
+5. SIGTERM/SIGINT graceful shutdown -- required for cron/k8s/systemd schedulers
+6. Dropped/null receipt handling -- explicit error path for tx ambiguity
 
-The system follows a stateless diff engine pattern: each bot run reads full state from two sources (subgraph = desired state, Router = actual state), computes the minimum reconciliation actions via a pure function, executes them sequentially, and exits. The Router contract is the stable identity -- the bot is a replaceable "hand" that operates it. See [ARCHITECTURE.md](ARCHITECTURE.md) for component boundaries, data flow, and project structure.
+**Should have (differentiators):**
+7. Gas estimation with retry (3 attempts, exponential backoff)
+8. Run summary log (single JSON object at exit: items, actions, txs, errors, duration)
+9. Log-level configuration via env var
 
-**Major components:**
-1. **KlerosReputationRouter.sol** -- Encapsulates all feedback logic, hardcodes constants (+/-95, tags), tracks per-agent state, authorizes bot addresses. Is the trusted `clientAddress` that consumers verify.
-2. **Bot (TypeScript)** -- Stateless diff engine with clear module boundaries: config loader, subgraph reader, router state reader (Multicall3), diff engine (pure function), executor (IPFS + tx), transaction safety layer.
-3. **Kleros 8004 Identity** -- One-time registration of Kleros as an agent in IdentityRegistry. Produces `klerosAgentId` for Router configuration.
+**Defer:**
+- PROD-03 (Pausable contract upgrade, key rotation docs) -- contract scope, not bot
+- Correlation IDs per action -- nice-to-have, no breaking change to add later
+- CID verification after upload -- propagation delay is inherent, not a v1.1 blocker
 
-### Critical Pitfalls
+### Architecture Changes
 
-See [PITFALLS.md](PITFALLS.md) for all 15 pitfalls with detailed prevention strategies.
+**New modules:**
 
-1. **Non-atomic revoke-then-negative (Pitfall 3)** -- If revoke succeeds but negative submission fails, agent gets zero reputation instead of -95, and the diff logic has no recovery branch. Fix: make `submitNegativeFeedback` handle both cases (with and without prior feedback). The diff should trigger on "Absent + Reject" regardless of `hasFeedback`.
-2. **Agent re-registration silently skipped (Pitfall 8)** -- After Scenario 2, `hasFeedback=true` (pointing to -95). Re-registered agent with `Submitted` status matches no diff branch. Fix: track feedback type (Positive/Negative/None) instead of boolean. This is a design-time decision that must be resolved before implementation.
-3. **Subgraph indexing lag creates false negatives (Pitfall 1)** -- Bot may submit positive feedback for an agent currently under dispute. Fix: check `_meta { block { number } }` and compare to chain head. Skip run if lag exceeds threshold.
-4. **Nonce collision on partial run failure (Pitfall 2)** -- Timed-out tx response leaves nonce state ambiguous. Fix: explicit nonce management, stop the entire run on any tx ambiguity.
-5. **Proxy storage collision on upgrade (Pitfall 10)** -- New state variables inserted between existing ones corrupt all feedback state. Fix: use `uint256[50] private __gap`, UUPS pattern, storage layout diffing in CI.
+| Module | Responsibility |
+|--------|---------------|
+| `bot/src/logger.ts` | pino instance creation, stderr destination, error serializer with secret scrubbing |
+| `bot/src/ipfs.ts` | `pinToIPFS(evidence, jwt): Promise<string>` -- single Pinata API call, returns `ipfs://<CID>` |
+| `bot/src/tx.ts` | `estimateGas()` (retryable), `submitTx()` (not retryable), `waitForReceipt()`, `checkBalance()` |
+
+**Modified modules:**
+
+| Module | Change |
+|--------|--------|
+| `config.ts` | Add PINATA_JWT (optional), LOG_LEVEL (optional) to zod schema |
+| `chain.ts` | executeActions() refactored: prepare/execute split, uses ipfs.ts + tx.ts, checks shutdown flag |
+| `index.ts` | SIGTERM/SIGINT handler registration, logger init, balance preflight call, run summary |
+| All modules | Replace console.log/error with logger calls |
+
+**Key architectural decision:** The execute phase splits into prepare (upload all evidence) then execute (submit all txs). This prevents IPFS failures from corrupting the nonce-managed transaction loop.
+
+### Watch Out For
+
+1. **IPFS upload in tx loop** (Critical) -- Pinata calls inside the nonce-managed loop cause cascading failures. Prevention: prepare/execute split. Upload all CIDs first, then execute transactions with pre-resolved URIs.
+
+2. **Secret leakage in structured logs** (Critical) -- Pinata JWT and private key appear in nested error cause chains. Prevention: pino custom error serializer that regex-strips `Bearer` tokens and 64-char hex strings. Test by intentionally triggering errors.
+
+3. **SIGTERM during tx execution** (Critical) -- Signal arrives after writeContract but before receipt. Prevention: boolean flag checked between actions, not AbortController. Finish current tx, then exit. Hard timeout (15s) as safety net.
+
+4. **Pinata rate limits as silent timeouts** (Moderate) -- Free tier throttles rather than rejects after ~200 req/min. Prevention: 5s per-upload timeout, 30s total prepare-phase budget, circuit breaker after 3 consecutive failures.
+
+5. **Retry budget explosion** (Moderate) -- Individual retries compound across 50+ actions into 10+ minute runs. Prevention: global execution budget (120s). Circuit breaker for Pinata. Scheduler mutual exclusion.
 
 ## Implications for Roadmap
 
-Based on research, the system has clear dependency ordering that dictates phase structure. The Router contract is the foundation -- everything depends on it. The bot cannot be built without the Router ABI. End-to-end testing requires both.
+### Phase 1: Structured Logging
 
-### Phase 1: Router Contract
+**Rationale:** Foundation dependency -- every other feature produces log output. Must land first.
+**Delivers:** pino logger with stderr output, secret redaction, child loggers, LOG_LEVEL config. All console.log/error calls replaced.
+**Addresses:** PROD-01 (structured logging), log-level config, dry-run stdout preservation
+**Avoids:** Pitfall 2 (JWT in logs), Pitfall 6 (stdout/stderr separation), Pitfall 11 (nested redaction), Pitfall 14 (pino flush on shutdown)
 
-**Rationale:** Everything depends on the Router. It defines the ABI the bot codes against, the on-chain state the diff engine reads, and the proxy pattern that must be correct from day one. The re-registration edge case (Pitfall 8) and non-atomic negative (Pitfall 3) must be resolved in the contract design, not patched later.
-**Delivers:** Deployed, tested Router contract on Sepolia with UUPS proxy, storage gaps, all 3 scenario functions, bot authorization, event emissions.
-**Addresses:** All contract-layer table stakes features: Scenarios 1/2/3, feedback state tracking, duplicate prevention, bot authorization, owner admin.
-**Avoids:** Pitfall 3 (non-atomic negative), Pitfall 4 (feedbackIndex desync), Pitfall 8 (re-registration skip), Pitfall 10 (storage collision), Pitfall 11 (ERC-8004 interface pinning).
+### Phase 2: Transaction Safety
 
-### Phase 2: Kleros 8004 Identity + Router Configuration
+**Rationale:** Independent of IPFS. Addresses operational risks that exist today (v1.0 has no SIGTERM handling, no balance check, no gas retry).
+**Delivers:** tx.ts module (estimateGas with retry, submitTx without retry, waitForReceipt with configurable timeout), balance preflight in index.ts, SIGTERM/SIGINT handlers, run summary log
+**Addresses:** TXSAFE-01 through TXSAFE-04, PROD-02 (exit codes)
+**Avoids:** Pitfall 3 (SIGTERM mid-tx), Pitfall 4 (state change revert via simulateContract), Pitfall 8 (receipt timeout), Pitfall 9 (stale balance), Pitfall 10 (retry budget)
 
-**Rationale:** Can run in parallel with Phase 3 once Router is deployed. One-time setup that produces the `klerosAgentId` the Router needs. Quick phase -- Foundry script execution.
-**Delivers:** Kleros agent registered in IdentityRegistry, Router configured with `klerosAgentId` and authorized bot address.
-**Addresses:** One-time setup features from FEATURES.md.
+### Phase 3: IPFS Evidence Upload
 
-### Phase 3: Bot Core (Diff Engine + Data Readers)
+**Rationale:** Depends on logger (Phase 1) for structured error reporting. Benefits from tx.ts (Phase 2) patterns but is not blocked by it. Most complex new feature -- benefits from established patterns.
+**Delivers:** ipfs.ts module, prepare/execute split in chain.ts, IPFS-first with data: URI fallback, per-item failure isolation
+**Addresses:** IPFS-01 (Pinata upload), IPFS-02 (evidence schema), IPFS-03 (failure isolation)
+**Avoids:** Pitfall 1 (upload in tx loop), Pitfall 5 (rate limit timeout), Pitfall 13 (CID format -- pin to v1 API), Pitfall 15 (CID non-determinism -- accept variance)
 
-**Rationale:** Requires Router ABI from Phase 1. The diff engine is the heart of the bot and is a pure function -- can be developed and thoroughly tested without any infrastructure beyond the ABI types. Subgraph reader and Router state reader are developed here but can be tested independently.
-**Delivers:** `computeActions` pure function with full test coverage, subgraph reader with cursor pagination, Router state reader with Multicall3 batching, config validation with zod.
-**Uses:** TypeScript, viem, graphql-request, zod, vitest.
-**Avoids:** Pitfall 1 (subgraph lag -- `_meta` check), Pitfall 5 (Disputed status handling), Pitfall 7 (Multicall3 batch size), Pitfall 9 (pagination cursor sanity check), Pitfall 12 (CAIP-10 validation), Pitfall 15 (rate limiting/backoff).
+### Phase 4: Integration Testing and Hardening
 
-### Phase 4: Bot Integration (IPFS + Transaction Execution + End-to-End)
-
-**Rationale:** Depends on Phases 1-3. Wires the diff engine to real IPFS pinning and Router transaction submission. This is where transaction safety (Pitfall 2) and IPFS failure handling (Pitfall 6) matter.
-**Delivers:** Complete working bot: IPFS evidence upload, transaction execution with safety, balance preflight, graceful shutdown, structured logging. End-to-end verification on Sepolia.
-**Addresses:** All bot-layer table stakes + differentiator features: IPFS evidence, tx safety, balance preflight, graceful shutdown.
-**Avoids:** Pitfall 2 (nonce collision -- explicit nonce management, stop on ambiguity), Pitfall 6 (IPFS blocking -- separate prepare/execute phases).
-
-### Phase 5: Production Hardening
-
-**Rationale:** After end-to-end verification on Sepolia, harden for production use.
-**Delivers:** Monitoring, alerting, key rotation documentation, Pausable contract upgrade, structured JSON logging.
-**Addresses:** P2 features: graceful shutdown, structured logging, monitoring integration.
-**Avoids:** Pitfall 14 (key compromise -- Pausable, monitoring).
+**Rationale:** All features converge in chain.ts executeActions(). End-to-end verification against anvil fork with Pinata test JWT.
+**Delivers:** Integration tests covering SIGTERM mid-batch, Pinata failure fallback, balance exhaustion mid-batch, receipt timeout handling
+**Addresses:** Cross-cutting quality assurance
+**Avoids:** Pitfall 10 (verifies global execution budget works end-to-end)
 
 ### Phase Ordering Rationale
 
-- **Contract first, bot second:** The bot codes against the Router's ABI. Changing the Router's interface after the bot is built creates unnecessary rework. The re-registration edge case (Pitfall 8) changes the Router's state model (boolean to enum), which cascades to the bot's diff logic.
-- **Pure function core before integration:** `computeActions` can be tested with zero infrastructure. Building and testing it first ensures business logic correctness before adding network complexity.
-- **IPFS and tx execution last in bot development:** These are the most failure-prone components (network dependencies, gas estimation, nonce management). By the time they're built, the diff logic is proven correct.
-- **Identity registration parallel with bot development:** No dependency on bot code. Can happen as soon as the Router is deployed.
+- Logging first because it is imported by every module -- changing it later means rebasing all other work
+- Transaction safety before IPFS because it addresses existing v1.0 operational gaps (higher urgency) and establishes patterns (retry, signal handling) reused by IPFS
+- IPFS last among feature phases because it is the only one with an external service dependency (Pinata) and benefits from the retry/circuit-breaker patterns established in Phase 2
+- Phases 2 and 3 could theoretically parallelize (independent modules) but sequential is safer given they both modify chain.ts executeActions()
 
 ### Research Flags
 
-Phases likely needing deeper research during planning:
-- **Phase 1 (Router Contract):** Must resolve Pitfall 8 (re-registration state model) and verify ERC-8004 `giveFeedback` return value (Pitfall 4) before implementation. Research the exact `ReputationRegistry` interface deployed on Sepolia.
-- **Phase 3 (Bot Core):** Needs real subgraph data from the target PGTCR list to validate pagination, CAIP-10 format assumptions, and metadata field mapping. Run `/gsd:research-phase` to examine actual subgraph responses.
+**Needs deeper research during planning:**
+- Phase 3 (IPFS): Pinata rate limit behavior on the specific plan tier. Test whether v1 API returns CIDv0 or CIDv1 with `cidVersion: 1` option. Verify gateway retrieval latency.
 
-Phases with standard patterns (skip research-phase):
-- **Phase 2 (Identity Registration):** One-time Foundry script. Standard pattern.
-- **Phase 4 (Bot Integration):** viem transaction lifecycle, Pinata IPFS pinning -- well-documented APIs. Standard patterns.
-- **Phase 5 (Production Hardening):** OpenZeppelin Pausable, monitoring setup -- standard ops work.
+**Standard patterns (skip research-phase):**
+- Phase 1 (Logging): pino setup is well-documented, no unknowns
+- Phase 2 (Tx Safety): viem patterns are established, retry wrapper is trivial
+- Phase 4 (Integration): test patterns follow existing vitest + anvil setup
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | All versions verified via npm registry. Well-established tools with strong documentation. No exotic dependencies. |
-| Features | HIGH | Derived directly from PRD v2 + amendments. Three scenarios cover entire business logic. Anti-features clearly documented from PoC learnings. |
-| Architecture | HIGH | Stateless diff engine is a proven pattern. Component boundaries are clean. Data flow is unidirectional. PRD fully specifies the architecture. |
-| Pitfalls | MEDIUM-HIGH | Critical pitfalls (1-4) are well-known oracle/subgraph patterns. Project-specific pitfalls (5, 8, 11) derived from PRD analysis -- less battle-tested. |
+| Stack | HIGH | Minimal additions (1 prod dep). All evaluated against alternatives with clear rationale. |
+| Features | HIGH | Scope is well-bounded. Clear table stakes vs differentiators. Anti-features explicitly documented. |
+| Architecture | HIGH | Small codebase, well-understood. New modules have clear boundaries. Prepare/execute split is the key insight. |
+| Pitfalls | MEDIUM-HIGH | Critical pitfalls (1, 2, 3) are high confidence. Rate limit behavior (5) and CID propagation (7) depend on Pinata's specific tier. |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- **ERC-8004 `giveFeedback` return value:** Does the ReputationRegistry return the feedback index from `giveFeedback`? If yes, the Router should use it directly instead of calling `getLastIndex` separately (Pitfall 4). Verify against deployed contract on Sepolia.
-- **Open Question Q1 (re-registration):** PRD flags this but provides no solution. Research identified a concrete fix (feedback type enum instead of boolean). Must be confirmed as the approach before Phase 1 implementation.
-- **Open Question Q7 (v1 vs v2 arbitrator):** Affects subgraph schema and `arbitratorExtraData` format. Deferred to v2+ but should be tracked.
-- **Actual PGTCR subgraph data format:** CAIP-10 format in `metadata.key2`, item ID format, pagination behavior -- all assumptions that should be validated against the real Goldsky endpoint before Phase 3.
-- **Disputed status during active feedback:** Identified as a known limitation (Pitfall 5). Acceptable for PoC but needs documentation for consumers.
+- **Pinata plan tier limits:** Free tier allows ~200 req/min. If the bot processes >200 items per run, need paid tier or batching strategy. Validate during Phase 3 planning.
+- **pino vs custom logger:** STACK.md and ARCHITECTURE.md disagree. This summary recommends pino. Confirm during Phase 1 requirements.
+- **Prepare/execute split granularity:** Should revoke-only actions (Scenario 3, no evidence needed) execute immediately or wait for the full prepare phase? Likely: execute immediately since they have no IPFS dependency.
+- **Receipt timeout default:** 60s (current) vs 120s (recommended for L1) vs configurable. Decide during Phase 2 requirements.
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- PRD v2: `.planning/research/kleros-reputation-oracle-prd-v2.md` -- full system specification
-- PRD Amendments: `.planning/research/kleros-reputation-oracle-prd-v2-amendments.md` -- PoC lessons learned
-- CLAUDE.md project instructions -- distilled design decisions and constraints
-- npm registry -- package versions verified 2026-03-24
-- viem docs -- multicall API, contract interaction patterns
-- OpenZeppelin docs -- UUPS proxy pattern, v5 migration
-- Foundry book -- forge test, anvil fork mode, deployment scripts
+- Existing codebase: `bot/src/*.ts` -- direct code reading
+- [Pinata REST API docs](https://docs.pinata.cloud/api-reference/endpoint/ipfs/pin-json-to-ipfs) -- pinJSONToIPFS endpoint
+- [pino npm](https://www.npmjs.com/package/pino) -- v10.3, structured logging
+- [viem docs](https://viem.sh/docs/actions/wallet/sendTransaction.html) -- tx lifecycle, gas estimation
 
 ### Secondary (MEDIUM confidence)
-- The Graph documentation -- cursor pagination limits, `_meta` block height
-- Goldsky subgraph behavior -- indexing latency patterns
-- ERC-8004 specification -- interface stability assumptions
-
-### Tertiary (LOW confidence)
-- PGTCR subgraph data format assumptions -- need validation against real endpoint
-- Multicall3 batch size limits per RPC provider -- need testing with target provider
+- [Pinata rate limits](https://docs.pinata.cloud/account-management/limits) -- tier-specific behavior
+- [Node.js graceful shutdown patterns](https://oneuptime.com/blog/post/2026-01-06-nodejs-graceful-shutdown-handler/view) -- SIGTERM handling
+- [Pino vs Winston benchmarks](https://betterstack.com/community/guides/scaling-nodejs/pino-vs-winston/) -- performance comparison
 
 ---
-*Research completed: 2026-03-24*
+*Research completed: 2026-03-30*
 *Ready for roadmap: yes*

@@ -1,10 +1,10 @@
 # Domain Pitfalls
 
 **Domain:** Subgraph-to-chain oracle / PGTCR-to-ERC-8004 reputation bridge
-**Researched:** 2026-03-24
-**Overall confidence:** MEDIUM-HIGH (based on training data for oracle/bridge patterns, verified against PRD specifics)
+**Researched:** 2026-03-30
+**Overall confidence:** MEDIUM-HIGH
 
-> **Scope note:** The PRD amendments already document pitfalls from the PoC review: daemon mode, local DB, mock-heavy tests, unsafe tx retry, eligibility engines. This document covers pitfalls **beyond** those known issues.
+> **Scope:** v1.1 pitfalls for adding IPFS evidence (Pinata), transaction safety hardening, and structured JSON logging to the existing stateless bot. v1.0 pitfalls retained where still applicable.
 
 ---
 
@@ -12,285 +12,325 @@
 
 Mistakes that cause rewrites, stuck state, or incorrect reputation data.
 
-### Pitfall 1: Subgraph Indexing Lag Creates False Negatives
+### Pitfall 1: IPFS Upload Inside the Transaction Loop Creates Cascading Failures
 
-**What goes wrong:** The bot reads subgraph state that is behind chain state. An item was just challenged and removed on-chain, but the subgraph still shows it as `Submitted`. The bot sees "Submitted + no feedback" and submits positive feedback for an agent that should be getting negative feedback. The next run corrects it (revoke + negative), but for the interval between runs, the agent has incorrect positive reputation.
+**What goes wrong:** The current `executeActions` loop in `chain.ts` builds evidence and feedbackURI inline (lines 122-131, 141-159). If Pinata replaces `buildFeedbackURI` as the evidence source, IPFS uploads happen mid-transaction-loop. Pinata returns a 429 rate limit after the 3rd upload, but nonce has already incremented twice. The remaining actions are blocked. Worse: if the upload timeout is long (Pinata's default is 30s), the RPC may drop the pending nonce slot, causing the next transaction to fail with a nonce gap.
 
-**Why it happens:** Goldsky subgraphs have variable indexing latency (seconds to minutes, occasionally longer during reorgs or heavy load). The bot treats subgraph data as ground truth without validating freshness.
+**Why it happens:** The current architecture couples evidence construction with transaction execution. Moving from synchronous `data:` URI (zero latency, zero failure) to async HTTP upload (network-dependent, rate-limited) inside a nonce-managed loop is a category change the code structure does not accommodate.
 
-**Consequences:** Temporarily incorrect reputation. If the scheduling interval is long (e.g., hourly), an agent that was removed by dispute carries positive reputation for up to an hour. For a reputation oracle backed by economic security, this undermines the trust signal.
+**Consequences:** Partial action execution. Nonce desync. Wasted gas on confirmed transactions that will be followed by orphaned actions. Next run re-diffs and handles the rest, but ETH is wasted and reputation updates are delayed.
 
 **Prevention:**
-- Query the subgraph's `_meta { block { number } }` field and compare to the chain's latest block. If the lag exceeds a threshold (e.g., 50 blocks on mainnet, 200 on L2s), log a warning and optionally skip the run.
-- For Scenario 2 (dispute removal), cross-validate the item's on-chain status via a direct `PermanentGTCR.items(itemID)` call before issuing negative feedback. The subgraph is the discovery layer; the chain is the confirmation layer.
-- Accept that positive feedback (Scenario 1) is lower-risk for lag because the PGTCR `submissionPeriod` already enforces a waiting window.
+- Split into two phases: (1) prepare phase uploads ALL evidence to Pinata, producing a `Map<agentId, ipfsCID>`, (2) execute phase uses pre-resolved CIDs. If any upload fails in prepare phase, skip that action entirely -- do not enter the execute phase for it.
+- The prepare phase is idempotent: re-uploading identical JSON to Pinata returns the same CID (content-addressed). No harm in duplicate uploads.
+- Revoke-only actions (Scenario 3) need no IPFS upload. These should execute even when Pinata is down.
 
-**Detection:** Monitor the gap between subgraph block height and chain block height over time. Alert if it exceeds the threshold for more than 2 consecutive runs.
+**Detection:** Log upload duration and success/failure count. Alert if prepare phase takes >30s total (indicates rate limiting or gateway issues).
 
-**Phase:** Phase 1 (Bot core). The `_meta` check should be in the initial polling implementation.
+**Phase:** v1.1 IPFS Evidence phase. Restructure the main flow before integrating Pinata.
 
 ---
 
-### Pitfall 2: Nonce Collision on Partial Run Failure
+### Pitfall 2: Pinata JWT/API Key Logged in Error Messages
 
-**What goes wrong:** The bot processes a batch of actions sequentially. Action 3 of 10 sends a transaction. The RPC accepts it but the response times out (network glitch). The bot catches the error and moves to action 4. Now actions 3 and 4 may use the same nonce (depending on how viem's nonce management works), or the bot may skip action 3's confirmation entirely. On the next run, the stateless diff re-computes, but if action 3 landed on-chain between runs, the diff is now stale.
+**What goes wrong:** Pinata SDK or raw `fetch` calls throw errors that include the request headers (including `Authorization: Bearer <JWT>`). The bot's catch block logs the full error object. The JWT appears in stdout, CI logs, or monitoring dashboards. On a shared CI runner or log aggregation service, the key is now compromised.
 
-**Why it happens:** viem's default nonce management queries `eth_getTransactionCount` with `pending`, but "pending" behavior varies by RPC provider. Some RPCs drop pending transactions from the pool after a timeout. Others keep them indefinitely. The bot has no way to know if a timed-out transaction will land or not.
+**Why it happens:** Node.js `Error` objects from HTTP libraries often include the request config. `console.error(error)` or `JSON.stringify(error)` serializes everything. The current `config.ts` already redacts `BOT_PRIVATE_KEY` in validation errors (line 27), but there is no equivalent protection for Pinata credentials at the logging layer.
 
-**Consequences:** Duplicate transactions (wasting gas), stuck nonces (all subsequent transactions queue behind a dropped one), or skipped actions that never get retried because the next run's diff looks clean (the timed-out tx landed silently).
+**Consequences:** Pinata API key compromise. Attacker can pin arbitrary content under the account, exhaust quotas, or use the gateway for abuse.
 
 **Prevention:**
-- Use explicit nonce management: fetch the nonce once at the start of the action loop, increment locally per transaction. This avoids nonce conflicts within a single run.
-- After each transaction submission, wait for the receipt (with a bounded timeout). If receipt times out, stop processing further actions and exit. The next run re-diffs and handles anything that was missed.
-- Never fire-and-forget: each transaction must either confirm or be the last one attempted in that run.
-- The PRD's "tx submission NOT retryable" rule (Amendment 4) is correct but incomplete. It should extend to "stop the run after any tx ambiguity."
+- Add `PINATA_JWT` to the config schema with the same redaction treatment as `BOT_PRIVATE_KEY`.
+- In the structured logger, register a redaction list: `["PINATA_JWT", "BOT_PRIVATE_KEY", "Authorization"]`. Pino supports `redact: { paths: [...] }` natively.
+- Never log raw HTTP error objects. Extract `status`, `statusText`, and a safe message substring.
+- In error serializers, strip headers from error cause chains.
 
-**Detection:** Log every nonce used. Alert on nonce reuse or gaps between runs.
+**Detection:** Grep logs for `eyJ` (JWT prefix) or `0x` followed by 64 hex chars. Automate as a CI check on log output during dry-run tests.
 
-**Phase:** Phase 1 (Bot core, transaction execution loop).
+**Phase:** v1.1 Structured Logging phase (must land before or simultaneously with IPFS Evidence phase).
 
 ---
 
-### Pitfall 3: Revoke-Then-Negative Is Not Atomic
+### Pitfall 3: SIGTERM During Transaction Execution Leaves Nonce in Limbo
 
-**What goes wrong:** Scenario 2 requires two Router calls: `revokeFeedback()` then `submitNegativeFeedback()`. These are separate transactions. If the first succeeds but the second fails (gas spike, bot crashes, SIGTERM between them), the agent ends up with no reputation at all (revoked positive, no negative submitted). On the next run, the diff sees "Absent + disputeOutcome=Reject + hasFeedback=false" and... the current `computeActions` logic has no branch for this state. The agent was supposed to get -95 but gets nothing.
+**What goes wrong:** The bot is run by a cron scheduler (systemd timer, Kubernetes CronJob, GitHub Actions). The scheduler sends SIGTERM when the job exceeds its timeout. If SIGTERM arrives after `walletClient.writeContract` returns a tx hash but before `waitForTransactionReceipt` completes, the process exits. The transaction may or may not land on-chain. The nonce was incremented locally but the bot has no record of what happened. Next run: nonce from `getTransactionCount("pending")` depends on whether the tx landed. If it did, the diff is stale (action already executed). If it didn't, the pending nonce slot may be occupied by a ghost tx that eventually lands or is dropped.
 
-**Why it happens:** The `computeActions` diff logic checks `hasFeedback` to decide whether to revoke. If the revoke already happened but the negative wasn't submitted, `hasFeedback` is false. The `else if (item.status === 'Absent' && has)` branch doesn't match because `has` is false. The item falls through with no action.
+**Why it happens:** `process.exit(0)` in the current `main().then(() => process.exit(0))` (index.ts line 64) fires immediately. No signal handler exists. Node.js default SIGTERM behavior is to terminate without running cleanup.
 
-**Consequences:** An agent that was removed by dispute has zero reputation instead of -95. The oracle's core promise (dispute removal = negative reputation) is silently broken.
+**Consequences:** Transaction ambiguity. Could lead to duplicate feedback (double +95 if the tx silently landed) or skipped negative feedback (if Scenario 2's revoke landed but negative didn't).
 
 **Prevention:**
-- **Contract-level fix (preferred):** Make `submitNegativeFeedback` handle both cases: (1) revoke existing + submit negative, (2) submit negative without prior revoke. The current Router code already does this in the `else` branch of `submitNegativeFeedback` (no existing feedback). This branch should be reachable after a failed prior revoke.
-- **Bot-level fix:** In `computeActions`, add a fourth case: "Absent + disputeOutcome=Reject + hasFeedback=false + we know the agent had previous positive feedback." The tricky part is "we know" - without local state, this requires checking the ReputationRegistry's feedback history for this agent/client pair, or checking the Router's events.
-- **Simplest fix:** The `submitNegativeFeedback` function on the Router already handles `hasFeedback == false` in its else branch (lines 1281-1298 of the PRD). So the bot just needs to call `submitNegativeFeedback` regardless, and the Router handles both paths. The diff logic should be: "Absent + disputeOutcome=Reject" triggers negative feedback, period. The Router decides whether to revoke first.
+- Register `process.on('SIGTERM', ...)` and `process.on('SIGINT', ...)` that set a `shuttingDown` flag.
+- Check `shuttingDown` before each iteration of the action loop. If true, do NOT start the next transaction. Exit after the current transaction confirms or times out.
+- The key insight: for a one-shot bot, "graceful shutdown" means "finish the current transaction, then stop." NOT "cancel everything." A half-executed revoke+negative is worse than completing the current tx and stopping.
+- Set a hard timeout on the signal handler (e.g., 15s). If the current tx receipt doesn't arrive within that window, `process.exit(1)` and let the next run sort it out via stateless diff.
+- Do NOT call `process.exit()` inside the signal handler while an async operation is in-flight. Set the flag and let the main loop exit naturally.
 
-**Detection:** Monitor for agents with `Absent + Reject` status in the subgraph but `hasFeedback=false` on the Router. These are the stuck cases.
+**Detection:** Log when SIGTERM is received and what phase the bot is in (prepare, execute, done). If "execute" is logged with SIGTERM, the next run should be manually inspected.
 
-**Phase:** Phase 1 (Router contract design and bot diff logic). This is a design-time decision, not a runtime fix.
+**Phase:** v1.1 Transaction Safety phase.
 
 ---
 
-### Pitfall 4: feedbackIndex Desync Between Router and ReputationRegistry
+### Pitfall 4: Gas Estimation Succeeds But Transaction Reverts Due to State Change
 
-**What goes wrong:** The Router stores `feedbackIndex[agentId]` after calling `reputationRegistry.giveFeedback()`. But the index it stores comes from `getLastIndex(agentId, address(this))` called _after_ the feedback is given. If another contract (or a future second Router) gives feedback for the same agent from the same client address between the `giveFeedback` and `getLastIndex` calls in the same block, the stored index could point to the wrong entry.
+**What goes wrong:** The bot estimates gas for `submitPositiveFeedback(agentId, ...)`. Between estimation and submission, another actor (a second bot instance, a manual admin call, or a front-running MEV bot) calls the Router for the same agentId. The Router's state changes (e.g., feedback already submitted). The transaction reverts on-chain, consuming gas. The bot's `receipt.status === "reverted"` check catches it, but the nonce is consumed and the gas is wasted.
 
-**Why it happens:** `getLastIndex` is not transactional with `giveFeedback`. In the current single-Router design, this can't happen because only one Router calls from `address(this)`. But it becomes a real risk if:
-- A second bot process sends a competing transaction in the same block.
-- The Router contract is upgraded to support multi-list feedback, and two feedback calls for different lists but the same agent happen in one transaction.
+**Why it happens:** Gas estimation uses `eth_estimateGas` which simulates against current state. By the time the transaction is mined (next block or later), state may have changed. This is fundamental to Ethereum, not a bug. But for a bot that batches multiple actions with sequential nonces, one revert stops the entire remaining batch (current `D-10` stop-on-first-failure behavior).
 
-**Consequences:** `revokeOnly` or `submitNegativeFeedback` revokes the wrong feedback entry. On ERC-8004, revoking the wrong index could revoke someone else's feedback or revert if the index doesn't belong to this client.
+**Consequences:** Wasted gas + entire remaining batch skipped. If the revert was on a revoke action (Scenario 2/3), the negative feedback for all subsequent agents in the batch is delayed until the next run.
 
 **Prevention:**
-- **Immediate:** The Router should compute and return the index from the `giveFeedback` call's return value, not from a separate `getLastIndex` call. Check if `ReputationRegistry.giveFeedback` returns the index. If it does, use the return value. If not, the current approach is the best available.
-- **For multi-list/multi-bot:** Add a mutex or ensure only one bot can call the Router at a time (the `onlyAuthorizedBot` modifier already ensures this per-address, but two authorized bots could race).
-- **Single bot per Router deployment** is the simplest operational guarantee.
+- Use `simulateContract` (viem) before `writeContract` to catch state-change reverts before spending gas. This is a free `eth_call`, not an on-chain tx.
+- If simulation fails, skip that action and continue with the next one (soft failure) instead of stopping the entire batch. Modify the `D-10` rule: stop on nonce/gas errors (infrastructure), continue on revert errors (state).
+- For the Router specifically: make `submitPositiveFeedback` idempotent -- if feedback already exists for this agentId, return success (no-op) instead of reverting. This is a contract-level fix that eliminates the race condition entirely.
+- If running multiple bot instances (future scaling), use a mutex or leader election. For v1.1, document that only one bot instance should run per Router.
 
-**Detection:** After each `giveFeedback`, verify the stored index by reading the feedback entry at that index and confirming the parameters match.
+**Detection:** Track revert reasons. If `feedbackAlreadyExists` appears, the race condition occurred. If `insufficientGas`, it's an estimation error.
 
-**Phase:** Phase 1 (Router contract). Verify `giveFeedback` return value in the ERC-8004 spec before finalizing the Router code.
+**Phase:** v1.1 Transaction Safety phase. Simulation check is the bot-side fix; idempotent Router is a contract-side enhancement for later.
 
 ---
 
-### Pitfall 5: Subgraph "Disputed" Status Is an Unstable Intermediate
+### Pitfall 5: Pinata Rate Limits Silently Degrade to Timeout
 
-**What goes wrong:** The bot encounters an item with `status = Disputed`. The current diff logic only handles `Submitted`, `Reincluded`, and `Absent`. A `Disputed` item is silently skipped. If the dispute resolves to `Absent` with `disputeOutcome = Reject` between runs, the next run handles it correctly. But if the dispute resolves to `Reincluded` (submitter wins), the item comes back as active and the bot processes it. The problem: during the `Disputed` phase, if the bot had already submitted positive feedback (from a prior `Submitted` state), the feedback remains active while the item is under active dispute. The agent carries +95 reputation during a period when their legitimacy is being contested.
+**What goes wrong:** Pinata's free tier allows ~200 requests per minute. The bot processes 50 actions, each uploading evidence JSON. Uploads 1-30 succeed in ~500ms. Uploads 31-50 start timing out at 30s each instead of returning 429. The bot spends 10+ minutes in the prepare phase. The cron scheduler's timeout fires, sends SIGTERM, and the bot is killed before executing any transactions.
 
-**Why it happens:** `Disputed` is a transitional state. The bot's stateless diff model correctly ignores it (no action needed). But consumers of the 8004 reputation data don't know an active dispute exists. The +95 feedback is presented as "verified" when it's actually "verification contested."
+**Why it happens:** Pinata's rate limiter behavior varies by plan and endpoint. The `/pinning/pinJSONToIPFS` endpoint may throttle rather than reject. The Pinata SDK's default timeout is generous. Without explicit timeouts on the bot side, "rate limited" manifests as "very slow" rather than "error."
 
-**Consequences:** Reputation consumers make decisions based on +95 "verified" reputation for an agent whose verification is actively under dispute. This is misleading, even if the reputation eventually corrects.
+**Consequences:** No transactions execute. The entire run is wasted. From the scheduler's perspective, the bot timed out -- indistinguishable from a hanging process.
 
 **Prevention:**
-- **Accept it for PoC:** The PGTCR dispute process already has economic guarantees (challenger posts stake). A disputed item may or may not be removed. Revoking during dispute would be premature.
-- **Production enhancement:** Consider a "pause" or "disputed" tag. But ERC-8004 doesn't support status flags on individual feedback entries. The cleanest approach is to document this as a known limitation: reputation reflects the last settled state, not the current contested state.
-- **Monitoring:** Expose a metric or log entry when the subgraph shows items in `Disputed` status that have active feedback. Operators can manually investigate if needed.
+- Set an explicit per-upload timeout (5s for a small JSON payload; these are <1KB).
+- Set a total prepare-phase budget (e.g., 30s for all uploads combined). If exceeded, proceed with whatever CIDs were obtained and skip the rest.
+- Track consecutive upload failures. After 3 consecutive failures, stop trying and proceed to execute phase with available CIDs only.
+- Use Pinata's v2 API (`/v3/files`) which has clearer rate limit headers (`X-RateLimit-Remaining`, `Retry-After`). Parse these headers to detect rate limiting proactively.
+- Consider batching: upload all evidence as a single directory/car file if Pinata supports it, reducing request count from N to 1.
 
-**Detection:** Log items that transition from `Submitted/Reincluded` to `Disputed` while having active feedback.
+**Detection:** Log per-upload latency. Any upload >3s for a <1KB JSON should trigger a warning. Total prepare-phase duration >30s should be an error-level log.
 
-**Phase:** Phase 2 (Production hardening). Not critical for PoC, but should be documented as a known limitation.
+**Phase:** v1.1 IPFS Evidence phase.
 
 ---
 
 ## Moderate Pitfalls
 
-### Pitfall 6: IPFS Upload Failure Blocks the Entire Run
+### Pitfall 6: Structured Logging Breaks Dry-Run JSON Output
 
-**What goes wrong:** For Scenarios 1 and 2, the bot uploads IPFS evidence JSON before calling the Router. If the IPFS pinning service (Pinata, etc.) is down or rate-limited, the bot can't produce a `feedbackURI`. The entire action is blocked, and since the bot processes actions sequentially, all subsequent actions are also blocked.
+**What goes wrong:** The current dry-run mode (index.ts lines 39-48) prints actions as `JSON.stringify` to stdout. If structured logging replaces `console.log` with a JSON logger (e.g., Pino), dry-run output becomes interleaved with log lines -- both are JSON, but with different schemas. Downstream tools that parse dry-run output (`jq .`, monitoring scripts) break because they encounter log objects mixed with action objects.
+
+**Why it happens:** Pino writes to stdout by default. The dry-run action dump also writes to stdout. Both are JSON. A `jq` pipe sees `{"level":30,"msg":"Fetched 10 items"}` followed by `[{"type":"submitPositiveFeedback",...}]` and fails to parse.
+
+**Consequences:** Dry-run mode becomes unusable for automation. Operators cannot pipe dry-run output to `jq` or feed it to monitoring dashboards.
 
 **Prevention:**
-- Upload all IPFS evidence _before_ starting the transaction execution phase. Separate the "prepare" phase (subgraph read, diff compute, IPFS uploads) from the "execute" phase (on-chain transactions).
-- If IPFS upload fails for a specific action, skip that action and continue with others. The next run re-diffs and retries the failed ones.
-- Use a fallback IPFS gateway (e.g., Pinata primary, The Graph IPFS node as fallback).
-- For Scenario 3 (revoke-only), no IPFS is needed. These actions should not be blocked by IPFS failures.
+- Write structured logs to stderr. Pino supports `pino({ transport: { target: 'pino/file', options: { destination: 2 } } })` for stderr output.
+- Reserve stdout exclusively for dry-run action output (when `--dry-run` flag is set).
+- Alternatively: when `--dry-run` is active, suppress all log output except the final JSON dump. Use `logger.level = 'silent'` during dry-run.
+- Test dry-run output with `node bot.js --dry-run 2>/dev/null | jq .` in CI to verify stdout is clean JSON.
 
-**Phase:** Phase 1 (Bot core). Structure the main loop as: compute actions -> prepare all IPFS -> execute transactions.
+**Detection:** CI test that runs dry-run and pipes stdout through `jq`. If jq exits non-zero, the log/output separation is broken.
+
+**Phase:** v1.1 Structured Logging phase. Must be designed before implementing -- retrofitting stderr separation is harder.
 
 ---
 
-### Pitfall 7: Multicall3 Batch Size Exceeds Gas Limit or RPC Payload
+### Pitfall 7: CID Verification Skipped -- Pinata Returns Success But Content Not Retrievable
 
-**What goes wrong:** The bot batches all `hasFeedback()` calls into Multicall3. With 10k+ agents, this becomes a single `eth_call` with tens of thousands of sub-calls. Some RPC providers limit `eth_call` gas or payload size. The call silently fails, returns partial data, or times out.
+**What goes wrong:** Pinata's `pinJSONToIPFS` returns `{ IpfsHash: "Qm..." }`. The bot stores this CID and passes it as `feedbackURI` to the Router. The Router stores it on-chain. But the content is not actually retrievable from any IPFS gateway for minutes (pinning propagation delay) or ever (Pinata internal error where the pin was recorded but data wasn't stored). The on-chain `feedbackURI` points to nothing.
+
+**Why it happens:** IPFS pinning is eventually consistent. A successful API response means "we accepted the pin request," not "the content is globally available." Pinata's dedicated gateway may serve it immediately, but public gateways (`ipfs.io`, `dweb.link`) may not have it for 30-60 seconds, or at all if Pinata's internal replication failed.
+
+**Consequences:** On-chain reputation feedback references unretrievable evidence. Consumers calling `feedbackURI` get 404 or timeout. The reputation signal exists but is unverifiable. For a system built on verifiability (Kleros disputes), this undermines the evidence chain.
 
 **Prevention:**
-- Chunk Multicall3 batches to a reasonable size (100-200 calls per batch). Process chunks sequentially.
-- Handle Multicall3 partial failures: if `tryAggregate` is used (with `requireSuccess = false`), check each result's success flag individually.
-- Test with the target RPC provider's limits during development. Public RPCs (Alchemy, Infura free tier) have stricter limits than paid ones.
+- After uploading, verify the CID is retrievable from Pinata's dedicated gateway before using it on-chain. A simple `HEAD` request to `https://<gateway>.mypinata.cloud/ipfs/<CID>` with a 5s timeout.
+- If verification fails, compute the CID locally from the JSON content (using `multiformats` or `ipfs-unixfs`) and compare with Pinata's returned CID. If they match, the content is correct -- propagation is just slow. Proceed anyway, since the content will eventually be available.
+- If CIDs don't match, something is wrong. Skip that action.
+- For the v1.1 scope: accept that propagation delay is inherent. The evidence JSON is small (<1KB) and deterministic. The CID can be independently verified by any consumer who reconstructs the JSON from on-chain data. Document this as a known property, not a bug.
 
-**Phase:** Phase 1 (Bot core). Use viem's built-in `multicall` which handles chunking automatically via the `batchSize` option, but verify the default is sensible.
+**Detection:** Monitor 8004scan or a gateway probe for CID availability post-transaction.
+
+**Phase:** v1.1 IPFS Evidence phase (verification is a nice-to-have, not a blocker).
 
 ---
 
-### Pitfall 8: Agent Re-registration Creates Inconsistent Router State
+### Pitfall 8: Receipt Polling Timeout Treated as Transaction Failure
 
-**What goes wrong:** Open question Q1 from the PRD. Agent gets +95 (Scenario 1). Agent removed by dispute: revoke + submit -95 (Scenario 2). Now `hasFeedback=true, feedbackIndex -> -95 entry`. Agent re-registers on PGTCR, goes to `Submitted`. The diff sees: "Submitted + hasFeedback=true" -- this matches neither Scenario 1 (needs `!has`) nor Scenarios 2/3 (needs `Absent`). The agent is silently skipped. They never get new positive feedback.
+**What goes wrong:** `waitForTransactionReceipt` in `chain.ts` (line 176) has a 60s timeout. On Ethereum mainnet during congestion, a transaction with a low `maxFeePerGas` may not be included for several minutes. The 60s timeout fires. The bot catches the timeout error. The current code throws, which halts the batch. But the transaction is still in the mempool and may land in 2 minutes.
 
-**Why it happens:** The Router tracks a single boolean `hasFeedback` per agent. After Scenario 2, `hasFeedback=true` (pointing to the -95). The diff's Scenario 1 branch requires `!hasFeedback`. The re-registered agent never enters any branch.
+**Why it happens:** The timeout on `waitForTransactionReceipt` is a local timeout, not a chain-level rejection. The transaction is valid and submitted -- it's just not yet included. The bot interprets "no receipt in 60s" as "failed" when it actually means "pending."
 
-**Consequences:** An agent that was once removed by dispute and then legitimately re-verified never regains positive reputation through the oracle. The system silently fails for the re-registration case.
+**Consequences:** Same as Pitfall 3 (SIGTERM): transaction ambiguity. The next run may see the tx landed (diff is clean) or it may not have landed yet (diff resubmits, potentially with a nonce conflict).
 
 **Prevention:**
-- **Router fix:** Track feedback _type_ (positive/negative/revoked), not just presence. The diff logic becomes: "Submitted + (no feedback OR negative feedback) -> submit positive" and "Absent + positive feedback -> revoke/negative."
-- **Minimal fix:** Add a `feedbackType` enum to the Router: `None`, `Positive`, `Negative`. The diff logic checks type instead of boolean.
-- **PRD already flags this** in Q1 (§19) but doesn't provide a solution. This should be resolved before implementation, not deferred.
+- Increase receipt timeout for mainnet (300s is reasonable; average block time is 12s, but congestion can cause 10+ block delays).
+- Before treating a timeout as failure, check `eth_getTransactionByHash`. If it returns non-null, the tx is still pending -- log a warning and exit cleanly (exit code 0 or a distinct "pending" exit code). The next run's diff handles the outcome.
+- For L2s (Arbitrum, Base -- future targets), receipt timeout can be lower (30s) because block times are faster and finality is quicker.
+- Implement a configurable `TX_RECEIPT_TIMEOUT` env var. Default: 120s for L1, 30s for L2.
 
-**Detection:** Query for items with `Submitted` status that have been in the subgraph for longer than `submissionPeriod` but still have no positive feedback.
+**Detection:** Log the tx hash and "receipt timeout" distinctly from "tx reverted." These are operationally different events requiring different responses.
 
-**Phase:** Phase 1 (Router contract design). This must be resolved before deployment, not after.
+**Phase:** v1.1 Transaction Safety phase.
 
 ---
 
-### Pitfall 9: Subgraph Pagination Cursor Breaks on Reindexing
+### Pitfall 9: Balance Preflight Check Stale by Execution Time
 
-**What goes wrong:** The bot uses `id_gt` cursor-based pagination. During a subgraph reindexing event (Goldsky reindex, migration, version upgrade), item IDs may change format or ordering. The bot's cursor points to an ID that no longer exists in the new index. The query returns an empty result, and the bot concludes there are zero items. No actions are computed. If there were pending revocations or negative feedbacks, they're silently skipped.
+**What goes wrong:** The bot checks ETH balance at startup. Balance is sufficient. During the action loop, each tx consumes gas. By action 8 of 10, the balance is insufficient. The transaction reverts with "insufficient funds," which the stop-on-failure logic catches. But 7 transactions already consumed gas for partial work.
 
-**Why it happens:** Subgraph entity IDs are constructed by the subgraph mapping code (e.g., `<itemID>@<tcrAddress>`). A subgraph version upgrade could change this format. The bot has no way to detect that the subgraph was reindexed.
+**Why it happens:** Single balance check at startup doesn't account for cumulative gas cost of the batch. Gas prices can also spike between the preflight check and later transactions.
 
-**Consequences:** Silent data loss. The bot reports "0 actions" and exits cleanly, even though there are items needing processing.
+**Consequences:** Partial execution. ETH wasted on 7 transactions that will need complementary actions (the remaining 3) on the next run.
 
 **Prevention:**
-- After pagination completes, sanity-check the total item count against the subgraph's `Registry.numberOfSubmitted + Registry.numberOfAbsent + Registry.numberOfDisputed`. If the bot fetched significantly fewer items than the registry reports, log an error and do not execute any actions.
-- Monitor item counts between runs. A sudden drop from 500 to 0 items is a signal, not legitimate.
-- Pin to a specific subgraph version in the endpoint URL (Goldsky supports versioned endpoints). Don't auto-upgrade.
+- Estimate total gas cost for the full batch before executing. Use `estimateContractGas` for each action, sum them, multiply by current `gasPrice` * 1.5 (safety margin). Compare against balance.
+- If balance is insufficient for the full batch, execute only the first N actions that fit within the budget. Prioritize revocations (Scenario 2/3) over positive feedback (Scenario 1) since revocations are time-sensitive (disputed agents carrying positive reputation).
+- Or simpler: check balance before each transaction, not just at startup. The overhead is one `eth_getBalance` call per action -- negligible compared to the transaction itself.
 
-**Detection:** Compare fetched item count against registry-level counters.
+**Detection:** Log remaining balance after each transaction. Alert if balance drops below a threshold (e.g., 2x average action gas cost).
 
-**Phase:** Phase 1 (Bot core, subgraph polling).
+**Phase:** v1.1 Transaction Safety phase.
 
 ---
 
-### Pitfall 10: Proxy Upgrade Storage Collision in Router
+### Pitfall 10: Retry Logic Turns One-Shot Bot Into Long-Running Process
 
-**What goes wrong:** The Router is specified as upgradeable (proxy pattern). On upgrade, new state variables are added. If the developer inserts new variables between existing ones (instead of appending), storage slots shift, corrupting `hasFeedback`, `feedbackIndex`, and `pgtcrToAgentId` mappings.
+**What goes wrong:** The developer adds retry logic for Pinata uploads (3 retries with exponential backoff: 1s, 2s, 4s) and for RPC calls (3 retries: 2s, 4s, 8s). With 50 actions, each potentially hitting both IPFS and RPC retries, the worst case is 50 * (4s IPFS retries + 8s RPC retries) = 10 minutes. The "one-shot" bot now runs for 10+ minutes, violating the architecture constraint (CLAUDE.md: "No daemon mode. One-shot run, external scheduler invokes").
 
-**Why it happens:** Solidity storage layout is positional. Proxy patterns (UUPS, transparent proxy) require appending new state variables to the end of the storage layout. Developers unfamiliar with proxy patterns insert variables where they "logically belong."
+**Why it happens:** Each individual retry seems reasonable (3 attempts, short backoff). But retries multiply across the number of actions. The total execution time is unbounded if the action count grows.
 
-**Consequences:** All feedback state is corrupted. `hasFeedback` returns wrong values. Revocations target wrong indices. Recovery requires manual storage repair or redeployment.
+**Consequences:** Scheduler timeout kills the bot. Or worse: the next cron tick fires a second instance while the first is still running. Two bots compete for the same nonce, causing all the nonce collision issues from v1.0 Pitfall 2.
 
 **Prevention:**
-- Use OpenZeppelin's UUPS or TransparentProxy with `@openzeppelin/contracts-upgradeable`. These include storage gap patterns.
-- Add `uint256[50] private __gap;` at the end of the contract. This reserves storage slots for future variables.
-- Use Foundry's storage layout verification: `forge inspect KlerosReputationRouter storage-layout` before and after upgrades.
-- Write an upgrade test that deploys V1, populates state, upgrades to V2, and verifies all V1 state is preserved.
+- Set a global execution budget (e.g., 120s total). Track elapsed time. After the budget is exhausted, stop executing new actions and exit cleanly.
+- Limit retries to infrastructure calls (RPC connection refused, DNS failure) not business logic failures (tx reverted, IPFS content rejected). Business failures should fail fast.
+- Use circuit breaker pattern: after 3 consecutive IPFS failures, disable IPFS for the rest of the run (fall back to `data:` URI or skip evidence).
+- The scheduler should enforce mutual exclusion (e.g., flock, PID file, or Kubernetes Job with `concurrencyPolicy: Forbid`) to prevent overlapping runs.
 
-**Detection:** Always diff storage layouts before deploying an upgrade. Automate this in CI.
+**Detection:** Log total execution time at exit. Alert if it exceeds 50% of the scheduler interval.
 
-**Phase:** Phase 1 (Router contract). The storage gap and proxy pattern must be in the initial deployment because retrofitting is difficult.
+**Phase:** v1.1 Transaction Safety phase (execution budget). v1.1 IPFS Evidence phase (circuit breaker for Pinata).
 
 ---
 
-### Pitfall 11: ERC-8004 Interface Changes Break the Router
+### Pitfall 11: Pino Redaction Paths Don't Cover Nested Error Causes
 
-**What goes wrong:** ERC-8004 is a relatively new standard. The `ReputationRegistry` and `IdentityRegistry` interfaces may evolve. If `giveFeedback` adds a parameter, changes return types, or renames functions, the Router's hardcoded interface calls revert. Since the Router is the single bridge between Kleros and the reputation system, all feedback operations stop.
+**What goes wrong:** Pino's `redact: { paths: ['BOT_PRIVATE_KEY'] }` only works on top-level log object properties. An error thrown by viem includes the full transaction request in `error.cause.request.params`, which contains the private key as part of the account context. The error serializer passes this through unredacted because the path is deeply nested (`err.cause.request.params[0].from` or similar).
 
-**Why it happens:** Building on a young standard. Interface stability is not guaranteed.
+**Why it happens:** Pino's redaction uses fast-redact which operates on explicitly listed paths. It cannot wildcard into arbitrary nesting depths. viem's error objects are deeply nested with cause chains.
 
-**Consequences:** Complete operational failure. No new feedback, no revocations, no negative feedback. The oracle goes silent.
+**Consequences:** Private key or Pinata JWT appears in structured logs when errors occur -- exactly when logs are most scrutinized.
 
 **Prevention:**
-- Pin to a specific ERC-8004 deployment address and interface version. The Router already stores the `reputationRegistry` address as mutable (owner can change it).
-- Use `try/catch` in Solidity for external calls to the ReputationRegistry. On failure, emit an error event instead of reverting. This way the Router transaction succeeds and can be debugged, rather than silently failing.
-- Keep the Router's interface abstraction thin: one `IReputationRegistry` interface file, clearly version-tagged.
-- Monitor the 8004 ecosystem for breaking changes. Subscribe to the EIP discussion thread and contract repo.
+- Use Pino's custom serializer for errors: `serializers: { err: (err) => sanitize(err) }` where `sanitize` recursively strips known sensitive patterns.
+- Strip `Authorization` headers from any HTTP error: regex-replace `Bearer [A-Za-z0-9._-]+` with `Bearer [REDACTED]`.
+- Strip hex strings matching private key pattern: replace `/0x[0-9a-f]{64}/gi` with `[REDACTED_KEY]` in serialized error output.
+- Test by intentionally triggering errors with known keys and grepping the log output for the key material.
 
-**Detection:** Monitor Router transactions for reverts. Any revert on `giveFeedback` or `revokeFeedback` is a potential interface breakage.
+**Detection:** CI test that triggers an RPC error and greps structured log output for `BOT_PRIVATE_KEY` value and `PINATA_JWT` value.
 
-**Phase:** Phase 1 (Router contract). The interface file should be locked to a specific version at deployment time.
+**Phase:** v1.1 Structured Logging phase.
 
 ---
 
 ## Minor Pitfalls
 
-### Pitfall 12: CAIP-10 Chain Validation Rejects Valid Items
+### Pitfall 12: Log Level Defaults Hide Important Warnings in Production
 
-**What goes wrong:** The bot validates `metadata.key2` against the expected chain ID using CAIP-10 format (`eip155:<CHAIN_ID>:<address>`). But the PGTCR list may use a slightly different format (lowercase/uppercase address, with or without `eip155:` prefix, chain ID as decimal vs hex). Valid items are rejected by overly strict validation.
+**What goes wrong:** Developer sets default log level to `"info"` for production and `"debug"` for development. During a production incident, `debug`-level messages that would explain the failure (e.g., "Pinata returned 429 on attempt 2 of 3") are not emitted. Operator restarts with `LOG_LEVEL=debug`, but the issue is intermittent and doesn't reproduce.
 
 **Prevention:**
-- Normalize both the expected format and the input before comparing: lowercase hex, strip leading zeros, ensure `eip155:` prefix.
-- Log rejected items with the raw value so operators can investigate format mismatches.
-- Test with real subgraph data from Sepolia before hardcoding the validation regex.
+- Default to `"info"` but log all retry attempts at `"warn"` level, not `"debug"`. Retries are operational signals, not debugging noise.
+- Log phase transitions at `"info"`: "prepare phase started", "prepare phase complete (45 CIDs)", "execute phase started", "execute phase complete (45 txs)".
+- Log individual actions at `"debug"`: per-agentId details, per-upload timing.
+- Make `LOG_LEVEL` configurable via env var. Add it to the zod config schema.
 
-**Phase:** Phase 1 (Bot core, validation layer).
+**Phase:** v1.1 Structured Logging phase.
 
 ---
 
-### Pitfall 13: Missing `Reincluded` Handling After Appeal
+### Pitfall 13: IPFS CID Format Mismatch Between Pinata v1 and v3 API
 
-**What goes wrong:** An item goes from `Submitted` -> `Disputed` -> `Reincluded` (submitter wins appeal). The bot already gave positive feedback during `Submitted`. When the item becomes `Reincluded`, the diff sees "Reincluded + has feedback = true" which falls through with no action. This is correct. But if for some reason the positive feedback was revoked during the dispute (e.g., manual admin intervention, or a bug in a prior run), the diff would see "Reincluded + has feedback = false" and correctly re-issue positive feedback via Scenario 1. **This works.** But the edge case to watch: if `Reincluded` items have a different challenge history (the latest challenge has `disputeOutcome = Accept`), and future logic changes check the latest challenge outcome, the wrong branch might fire.
+**What goes wrong:** Pinata's v1 API (`/pinning/pinJSONToIPFS`) returns CIDv0 format (`Qm...`, base58). Pinata's v3 API (`/v3/files`) returns CIDv1 format (`bafy...`, base32). The Router contract stores the CID as a string in `feedbackURI`. If the bot switches between API versions (e.g., during a Pinata migration), the same evidence content gets different CID strings. On-chain, these look like different evidence, even though the underlying content is identical.
 
 **Prevention:**
-- Keep the diff logic simple: check `status` and `hasFeedback`. Don't add challenge-history checks to Scenario 1. The challenge history is only relevant for Scenario 2 (determining dispute vs. voluntary removal).
-- Test the `Submitted -> Disputed -> Reincluded` lifecycle explicitly.
+- Pin to one API version. Use v1 (`/pinning/pinJSONToIPFS`) for simplicity -- it's stable and returns CIDv0 which is more widely supported by gateways.
+- If using v3, normalize CIDs to CIDv1 base32 consistently. Use `CID.parse(hash).toV1().toString()` from the `multiformats` package.
+- Document the CID format in the evidence schema spec so consumers know what to expect.
+- For `feedbackURI`, use the full IPFS URI format: `ipfs://<CID>` (not gateway URL). This is gateway-agnostic and follows IPFS conventions.
 
-**Phase:** Phase 1 (Bot core, diff logic testing).
+**Phase:** v1.1 IPFS Evidence phase.
 
 ---
 
-### Pitfall 14: Bot Wallet Key Compromise Has No Circuit Breaker
+### Pitfall 14: process.exit() in Signal Handler Skips Pino's Async Flush
 
-**What goes wrong:** The bot wallet's private key is leaked. An attacker calls Router functions via the authorized bot address, submitting arbitrary positive or negative feedback. Since the Router trusts any authorized bot, there's no rate limiting, no anomaly detection, and no way to pause operations without the owner (multisig) executing `setAuthorizedBot(compromisedAddress, false)`.
+**What goes wrong:** Pino buffers log output for performance (especially with `pino.destination()`). The SIGTERM handler calls `process.exit(0)`. Pino's buffer hasn't flushed. The last 5-10 log lines (including the "shutting down" message and final tx status) are lost.
 
 **Prevention:**
-- **Operational:** Use a dedicated hot wallet with minimal ETH. Monitor the wallet's transaction history for unexpected calls.
-- **Contract-level:** Consider adding a `pause()` function (OpenZeppelin Pausable) that any authorized bot can trigger. This gives the bot operator a self-destruct button.
-- **Detection:** Set up an alert on the bot wallet address for any transaction not initiated by the expected bot process (wrong gas price, unexpected timing, unknown function selector).
-- **Key rotation:** The Router's `setAuthorizedBot` supports adding a new bot and removing the old one. Document the key rotation procedure.
+- Call `logger.flush()` (synchronous) before `process.exit()`.
+- Or use `pino.final(logger, handler)` which provides a final logger that flushes synchronously.
+- Or use `pino({ destination: 1 })` with `sync: true` in the signal handler context (performance penalty only at shutdown, which is acceptable).
 
-**Phase:** Phase 2 (Production hardening). Not critical for Sepolia PoC.
+**Phase:** v1.1 Structured Logging phase.
 
 ---
 
-### Pitfall 15: Goldsky Endpoint Rate Limiting or Deprecation
+### Pitfall 15: Evidence JSON Differs Between Runs for Same Item, Breaking CID Determinism
 
-**What goes wrong:** The Goldsky public endpoint is rate-limited or deprecated. The bot fails to fetch subgraph data and exits with an error. If the error handling is too aggressive (e.g., `process.exit(1)` on any fetch failure), the scheduler retries immediately, hitting the rate limit harder.
+**What goes wrong:** `buildPositiveEvidence` includes `createdAt: new Date().toISOString()` (evidence.ts line 28). Each run produces a different timestamp, therefore a different CID. If the bot uploads evidence in the prepare phase but fails before executing transactions, the next run uploads again with a new timestamp, producing a different CID. The Pinata account accumulates duplicate pins (same content, different CIDs) for every failed run.
 
 **Prevention:**
-- Use exponential backoff on subgraph fetch retries (max 3 retries, then exit).
-- Support configurable subgraph endpoint URLs (already in the design). Document how to switch to a self-hosted subgraph if Goldsky becomes unavailable.
-- Use the private Goldsky endpoint (with API token) for higher rate limits.
-- Log the specific error (rate limit vs. timeout vs. server error) to differentiate between transient and permanent failures.
+- For CID determinism: use a stable timestamp. Options: (a) use the PGTCR item's `submissionTime` from the subgraph, (b) use the block timestamp of the subgraph's latest indexed block, (c) omit `createdAt` from the JSON used for CID computation and add it as metadata only.
+- For pin accumulation: Pinata charges by storage. Duplicate pins of <1KB JSON are negligible cost, but cluttered. Use `pinata.unpin(oldCID)` as part of cleanup, or accept the clutter for simplicity.
+- The better fix: accept that CIDs will vary per run. The feedbackURI is informational (evidence for the on-chain feedback), not a content-addressed identity. Duplicate pins are an acceptable cost.
 
-**Phase:** Phase 1 (Bot core, subgraph polling).
+**Phase:** v1.1 IPFS Evidence phase (decide on timestamp strategy early).
+
+---
+
+## Retained v1.0 Pitfalls (Still Applicable)
+
+The following v1.0 pitfalls remain relevant and are not superseded by v1.1 work:
+
+| v1.0 Pitfall | Status | v1.1 Relevance |
+|---|---|---|
+| Pitfall 1: Subgraph Indexing Lag | Still applies | Unchanged -- no v1.1 work affects subgraph reads |
+| Pitfall 2: Nonce Collision on Partial Failure | **Partially addressed** by v1.1 tx safety | SIGTERM handling (new Pitfall 3) and receipt timeout (new Pitfall 8) refine this |
+| Pitfall 3: Revoke-Then-Negative Non-Atomic | Still applies | v1.1 tx safety should add simulation (new Pitfall 4) but atomicity gap remains |
+| Pitfall 5: Disputed Status Intermediate | Still applies | Informational -- no v1.1 change |
+| Pitfall 6: IPFS Upload Blocks Run | **Superseded** by new Pitfall 1 | v1.1 IPFS phase directly addresses this with prepare/execute split |
+| Pitfall 7: Multicall3 Batch Size | Still applies | Unchanged |
+| Pitfall 8: Re-registration State | Still applies | Unchanged |
+| Pitfall 9: Pagination Cursor | Still applies | Unchanged |
+| Pitfall 10: Proxy Storage Collision | Still applies | Unchanged |
+| Pitfall 14: Key Compromise | **Extended** by new Pitfall 2 | Now includes Pinata JWT as a credential to protect |
 
 ---
 
 ## Phase-Specific Warnings
 
 | Phase Topic | Likely Pitfall | Mitigation |
-|-------------|---------------|------------|
-| Router contract design | Pitfall 3 (non-atomic revoke+negative), Pitfall 4 (feedbackIndex desync), Pitfall 8 (re-registration), Pitfall 10 (storage collision) | Resolve re-registration edge case in Router design before coding. Add storage gaps. Make `submitNegativeFeedback` handle both has/no-has cases. |
-| Bot diff logic | Pitfall 1 (subgraph lag), Pitfall 5 (Disputed state), Pitfall 8 (re-registration skip) | Add `_meta` block height check. Handle the case where agent has negative feedback but item is Submitted. |
-| Bot transaction execution | Pitfall 2 (nonce collision), Pitfall 6 (IPFS blocking) | Explicit nonce management. Separate prepare phase from execute phase. Stop run on tx ambiguity. |
-| Subgraph integration | Pitfall 9 (pagination cursor), Pitfall 15 (rate limiting) | Sanity-check item counts. Use versioned endpoints. Exponential backoff. |
-| Proxy upgrades | Pitfall 10 (storage collision), Pitfall 11 (ERC-8004 changes) | Storage gaps, layout diffing in CI, interface version pinning. |
-| Production deployment | Pitfall 14 (key compromise) | Pausable contract, monitoring, key rotation docs. |
+|---|---|---|
+| IPFS Evidence (Pinata) | Pitfall 1 (upload in tx loop), Pitfall 5 (rate limit timeout), Pitfall 7 (CID not retrievable), Pitfall 13 (CID format), Pitfall 15 (CID non-determinism) | Prepare/execute split. Per-upload timeout (5s). Pin to v1 API. Accept CID variance. |
+| Transaction Safety | Pitfall 3 (SIGTERM mid-tx), Pitfall 4 (state change revert), Pitfall 8 (receipt timeout), Pitfall 9 (balance preflight), Pitfall 10 (retry budget) | Signal handler with flag. simulateContract before write. Configurable receipt timeout. Cumulative gas estimate. Global execution budget. |
+| Structured Logging | Pitfall 2 (JWT in logs), Pitfall 6 (stdout/stderr separation), Pitfall 11 (nested redaction), Pitfall 12 (log level defaults), Pitfall 14 (pino flush) | Pino with stderr destination. Custom error serializer. Regex-based secret scrubbing. pino.final for shutdown. |
+| Integration (cross-cutting) | Pitfall 10 (one-shot becomes long-running) | Global execution budget. Circuit breaker for Pinata. Scheduler mutual exclusion. |
 
 ---
 
 ## Sources
 
-- PRD v2: `.planning/research/kleros-reputation-oracle-prd-v2.md` (sections 6, 7, 8, 11, 12, 19)
-- PRD Amendments: `.planning/research/kleros-reputation-oracle-prd-v2-amendments.md`
-- PGTCR Skill: `.claude/skills/pgtcr-stake-curate-skill.md`
-- CLAUDE.md project instructions
-- Training data knowledge of: Ethereum nonce management, subgraph indexing behavior, UUPS/TransparentProxy patterns, IPFS pinning reliability, Multicall3 usage patterns
+- Codebase analysis: `bot/src/chain.ts`, `bot/src/evidence.ts`, `bot/src/index.ts`, `bot/src/config.ts`
+- v1.0 pitfalls: `.planning/research/PITFALLS.md` (2026-03-24)
+- [Pinata API Limits](https://docs.pinata.cloud/account-management/limits)
+- [Pinata Rate Limit Issue](https://github.com/ipfs/ipfs-webui/issues/1900)
+- [Node.js Graceful Shutdown Guide](https://oneuptime.com/blog/post/2026-01-06-nodejs-graceful-shutdown-handler/view)
+- [Node.js SIGTERM and Kubernetes](https://blog.risingstack.com/graceful-shutdown-node-js-kubernetes/)
+- [Pino Logger Guide](https://signoz.io/guides/pino-logger/)
+- [Pino vs Winston](https://betterstack.com/community/guides/scaling-nodejs/pino-vs-winston/)
+- [viem Gas Estimation Discussion](https://github.com/wevm/viem/discussions/862)
+- [Sensitive Data in Logs](https://www.dash0.com/faq/the-top-5-best-node-js-and-javascript-logging-frameworks-in-2025-a-complete-guide)
 
-**Confidence note:** Pitfalls 1-4, 6-7, 9-10 are HIGH confidence (well-known patterns in oracle/subgraph/proxy domains). Pitfalls 5, 8, 11 are MEDIUM confidence (specific to this project's edge cases, derived from PRD analysis). Pitfalls 12-15 are MEDIUM confidence (operational concerns, context-dependent severity).
+**Confidence note:** Pitfalls 1, 3, 6, 8, 10 are HIGH confidence (well-known patterns, verified against this codebase). Pitfalls 2, 4, 5, 11 are MEDIUM-HIGH confidence (common patterns, specific interaction with this codebase analyzed). Pitfalls 7, 9, 12-15 are MEDIUM confidence (operational concerns, severity depends on deployment context).
