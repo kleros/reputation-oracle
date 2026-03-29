@@ -27,7 +27,14 @@ Kleros-backed, economically-secured reputation signals for ERC-8004 AI agents �
 
 ### Active
 
-(No active requirements — next milestone TBD)
+#### Current Milestone: v1.1 Production Hardening
+
+**Goal:** Make the bot production-ready with IPFS evidence, transaction safety, and structured logging.
+
+**Target features:**
+- IPFS evidence upload via Pinata — replace data: URI with IPFS CID for feedbackURI
+- Transaction safety — gas retry, dropped receipt handling, balance preflight, SIGTERM graceful shutdown
+- Structured JSON logging — replace console.log with structured output for debugging and monitoring
 
 ### Out of Scope
 
@@ -95,4 +102,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-27 after v1.0 milestone completion*
+*Last updated: 2026-03-30 after v1.1 milestone start*

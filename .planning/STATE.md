@@ -1,36 +1,35 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-status: Milestone complete
-stopped_at: Completed 1000-02-PLAN.md
-last_updated: "2026-03-27T13:52:45.146Z"
+milestone: v1.1
+milestone_name: Production Hardening
+status: Defining requirements
+stopped_at: Milestone v1.1 started
+last_updated: "2026-03-30T00:00:00.000Z"
 progress:
-  total_phases: 1
-  completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-27)
+See: .planning/PROJECT.md (updated 2026-03-30)
 
 **Core value:** Kleros-backed, economically-secured reputation signals for ERC-8004 AI agents
-**Current focus:** Phase 1000 — upgrade-bot-dependencies-to-latest-majors
+**Current focus:** v1.1 Production Hardening — IPFS evidence, tx safety, structured logging
 
 ## Current Position
 
-Phase: 1000
-Plan: Not started
-Milestone: v1.0 SHIPPED (2026-03-27)
-All 3 phases, 9 plans complete.
-Next: `/gsd:new-milestone` to start v1.1+
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-03-30 — Milestone v1.1 started
 
-Progress: [████████████████████] 100%
+Progress: [░░░░░░░░░░░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
@@ -100,6 +99,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-29T14:30:34.210Z
-Stopped at: Completed quick task 260329-mxh: Fix agent registration
-Resume file: None
+Last session: 2026-03-29T23:20:04.517Z
+Stopped at: Milestone v1.0 summary generated
+Resume file: .planning/reports/MILESTONE_SUMMARY-v1.0.md
