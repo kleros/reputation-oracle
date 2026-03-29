@@ -188,6 +188,13 @@ contract KlerosReputationRouter is Initializable, UUPSUpgradeable, OwnableUpgrad
         emit AgentRegistered(agentId, agentURI);
     }
 
+    /// @notice Update the agent URI on the IdentityRegistry.
+    /// @dev Router must be ownerOf(klerosAgentId) for this to succeed.
+    /// @param agentURI New URI to agent metadata JSON.
+    function updateAgentURI(string calldata agentURI) external onlyOwner {
+        identityRegistry.setAgentURI(klerosAgentId, agentURI);
+    }
+
     // ─── UUPS ───────────────────────────────────────────────────────────────────
 
     /// @dev Only the owner can authorize upgrades.

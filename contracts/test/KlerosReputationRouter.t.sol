@@ -380,6 +380,34 @@ contract KlerosReputationRouterTest is Test {
     }
 
     // ═════════════════════════════════════════════════════════════════════════════
+    // Agent URI Update
+    // ═════════════════════════════════════════════════════════════════════════════
+
+    function test_updateAgentURI_updatesTokenURI() public {
+        // Register agent first so Router owns it
+        vm.prank(owner);
+        router.registerAgent("https://kleros-agent.example.com");
+
+        // Update URI
+        string memory newURI = "ipfs://QmNewAgentMetadata";
+        vm.prank(owner);
+        router.updateAgentURI(newURI);
+
+        // Verify on IdentityRegistry
+        string memory actual = IIdentityRegistry(IDENTITY_REGISTRY).tokenURI(router.klerosAgentId());
+        assertEq(actual, newURI, "tokenURI should match updated URI");
+    }
+
+    function test_updateAgentURI_revertsForNonOwner() public {
+        vm.prank(owner);
+        router.registerAgent("https://kleros-agent.example.com");
+
+        vm.prank(unauthorized);
+        vm.expectRevert();
+        router.updateAgentURI("ipfs://unauthorized");
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════════
     // UUPS Upgrade
     // ═════════════════════════════════════════════════════════════════════════════
 

@@ -7,4 +7,6 @@ pragma solidity ^0.8.20;
 interface IIdentityRegistry {
     function register(string calldata agentURI) external returns (uint256 agentId);
     function ownerOf(uint256 agentId) external view returns (address);
+    function setAgentURI(uint256 agentId, string calldata agentURI) external;
+    function tokenURI(uint256 agentId) external view returns (string memory);
 }
