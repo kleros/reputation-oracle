@@ -10,10 +10,10 @@ Requirements for production hardening milestone. Each maps to roadmap phases.
 ### Structured Logging
 
 - [x] **LOG-01**: Bot uses pino for structured JSON logging to stderr, preserving stdout for dry-run output
-- [ ] **LOG-02**: Private keys and Pinata JWT are automatically redacted in all log output including nested error objects
-- [ ] **LOG-03**: Bot emits a single run summary JSON at exit: items found, actions computed, txs sent, errors, duration
+- [x] **LOG-02**: Private keys and Pinata JWT are automatically redacted in all log output including nested error objects
+- [x] **LOG-03**: Bot emits a single run summary JSON at exit: items found, actions computed, txs sent, errors, duration
 - [x] **LOG-04**: Log level is configurable via LOG_LEVEL env var (default: info)
-- [ ] **LOG-05**: All existing console.log/error calls replaced with structured logger calls
+- [x] **LOG-05**: All existing console.log/error calls replaced with structured logger calls
 
 ### Transaction Safety
 
@@ -54,10 +54,10 @@ Requirements for production hardening milestone. Each maps to roadmap phases.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | LOG-01 | Phase 4 | Complete |
-| LOG-02 | Phase 4 | Pending |
-| LOG-03 | Phase 4 | Pending |
+| LOG-02 | Phase 4 | Complete |
+| LOG-03 | Phase 4 | Complete |
 | LOG-04 | Phase 4 | Complete |
-| LOG-05 | Phase 4 | Pending |
+| LOG-05 | Phase 4 | Complete |
 | TXSAFE-01 | Phase 5 | Pending |
 | TXSAFE-02 | Phase 5 | Pending |
 | TXSAFE-03 | Phase 5 | Pending |
