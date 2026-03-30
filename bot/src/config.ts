@@ -10,6 +10,7 @@ export const configSchema = z.object({
 	PGTCR_ADDRESS: hexAddress,
 	SUBGRAPH_URL: z.string().url(),
 	BOT_PRIVATE_KEY: hexPrivateKey,
+	LOG_LEVEL: z.string().optional().default("info"),
 });
 
 export type Config = z.infer<typeof configSchema>;
