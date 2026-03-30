@@ -59,3 +59,13 @@ export interface EvidenceJson {
 		ruling: number | null;
 	};
 }
+
+/** Run summary emitted as the final log line before exit (D-05). */
+export interface RunSummary {
+	items: number;
+	valid: number;
+	actions: number;
+	txSent: number;
+	errors: number;
+	durationMs: number;
+}
