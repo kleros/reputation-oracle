@@ -1,9 +1,7 @@
 import pino from "pino";
 
 function sanitizeValue(value: string): string {
-	return value
-		.replace(/0x[0-9a-fA-F]{64}/gi, "[REDACTED_KEY]")
-		.replace(/Bearer [A-Za-z0-9._\-]+/g, "Bearer [REDACTED]");
+	return value.replace(/0x[0-9a-fA-F]{64}/gi, "[REDACTED_KEY]").replace(/Bearer [A-Za-z0-9._-]+/g, "Bearer [REDACTED]");
 }
 
 function sanitizeObject(obj: unknown): unknown {
