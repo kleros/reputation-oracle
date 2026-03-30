@@ -1,5 +1,8 @@
 import { GraphQLClient, gql } from "graphql-request";
+import { createChildLogger } from "./logger.js";
 import type { RawSubgraphItem } from "./types.js";
+
+const log = createChildLogger("subgraph");
 
 const ITEMS_QUERY = gql`
   query GetItems($registryAddress: String!, $lastId: String!, $first: Int!) {
@@ -58,6 +61,6 @@ export async function fetchAllItems(subgraphUrl: string, registryAddress: string
 		if (items.length < pageSize) break;
 	}
 
-	console.log(`Fetched ${allItems.length} items from subgraph`);
+	log.info({ count: allItems.length }, "Fetched items from subgraph");
 	return allItems;
 }

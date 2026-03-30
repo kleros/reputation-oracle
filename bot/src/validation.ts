@@ -1,4 +1,7 @@
+import { createChildLogger } from "./logger.js";
 import type { RawSubgraphItem, ValidatedItem } from "./types.js";
+
+const log = createChildLogger("validation");
 
 const ACTIONABLE_STATUSES = ["Submitted", "Reincluded", "Absent"] as const;
 type ActionableStatus = (typeof ACTIONABLE_STATUSES)[number];
@@ -19,7 +22,7 @@ export function parseChainIdFromCAIP10(caip10: string): number | null {
 
 /**
  * Validate and transform a raw subgraph item into a ValidatedItem.
- * Returns null (with console.warn) for invalid items.
+ * Returns null (with structured log.warn) for invalid items.
  *
  * Validation:
  * - metadata must exist with key0 (numeric) and key2 (CAIP-10)
@@ -30,30 +33,30 @@ export function parseChainIdFromCAIP10(caip10: string): number | null {
 export function validateAndTransformItem(raw: RawSubgraphItem, targetChainId: number): ValidatedItem | null {
 	// 1. Metadata must exist
 	if (!raw.metadata) {
-		console.warn(`Skipping item ${raw.id}: no metadata`);
+		log.warn({ itemId: raw.id, reason: "no metadata" }, "Skipping item");
 		return null;
 	}
 
 	// 2. Validate key2 (CAIP-10 chain)
 	const key2 = raw.metadata.key2?.trim();
 	if (!key2) {
-		console.warn(`Skipping item ${raw.id}: missing metadata.key2`);
+		log.warn({ itemId: raw.id, reason: "missing metadata.key2" }, "Skipping item");
 		return null;
 	}
 	const chainId = parseChainIdFromCAIP10(key2);
 	if (chainId === null) {
-		console.warn(`Skipping item ${raw.id}: invalid CAIP-10 format in key2="${key2}"`);
+		log.warn({ itemId: raw.id, reason: "invalid CAIP-10 format", key2 }, "Skipping item");
 		return null;
 	}
 	if (chainId !== targetChainId) {
-		console.warn(`Skipping item ${raw.id}: chain ${chainId} != target ${targetChainId}`);
+		log.warn({ itemId: raw.id, reason: "chain mismatch", chainId, targetChainId }, "Skipping item");
 		return null;
 	}
 
 	// 3. Validate key0 (agentId -- must be numeric string)
 	const key0 = raw.metadata.key0?.trim();
 	if (!key0 || !/^\d+$/.test(key0)) {
-		console.warn(`Skipping item ${raw.id}: invalid key0="${key0}"`);
+		log.warn({ itemId: raw.id, reason: "invalid key0", key0 }, "Skipping item");
 		return null;
 	}
 
@@ -62,13 +65,13 @@ export function validateAndTransformItem(raw: RawSubgraphItem, targetChainId: nu
 	try {
 		agentId = BigInt(key0);
 	} catch {
-		console.warn(`Skipping item ${raw.id}: key0="${key0}" not parseable as bigint`);
+		log.warn({ itemId: raw.id, reason: "key0 not parseable as bigint", key0 }, "Skipping item");
 		return null;
 	}
 
 	// 5. Validate status -- only actionable statuses pass through
 	if (!ACTIONABLE_STATUSES.includes(raw.status as ActionableStatus)) {
-		console.warn(`Skipping item ${raw.id}: non-actionable status="${raw.status}"`);
+		log.warn({ itemId: raw.id, reason: "non-actionable status", status: raw.status }, "Skipping item");
 		return null;
 	}
 

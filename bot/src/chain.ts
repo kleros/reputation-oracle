@@ -9,8 +9,11 @@ import {
 import { privateKeyToAccount } from "viem/accounts";
 import { routerAbi } from "./abi/router.js";
 import type { Config } from "./config.js";
+import { createChildLogger } from "./logger.js";
 import { buildFeedbackURI, buildNegativeEvidence, buildPositiveEvidence } from "./evidence.js";
 import { type Action, FeedbackType } from "./types.js";
+
+const log = createChildLogger("chain");
 
 function buildChain(config: Config): Chain {
 	return {
@@ -88,7 +91,7 @@ export async function readRouterStates(
 		}
 	}
 
-	console.log(`Read router states for ${agentIds.length} agents`);
+	log.debug({ count: agentIds.length }, "Read router states");
 	return map;
 }
 
@@ -103,7 +106,7 @@ export async function executeActions(
 	config: Config,
 ): Promise<void> {
 	if (actions.length === 0) {
-		console.log("No actions to execute");
+		log.info("No actions to execute");
 		return;
 	}
 
@@ -184,6 +187,6 @@ export async function executeActions(
 		}
 
 		nonce++;
-		console.log(`TX ${hash} confirmed for ${action.type} agentId=${action.agentId}`);
+		log.info({ txHash: hash, action: action.type, agentId: action.agentId.toString() }, "TX confirmed");
 	}
 }

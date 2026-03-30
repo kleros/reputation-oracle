@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { logger } from "./logger.js";
 
 const hexAddress = z.string().regex(/^0x[0-9a-fA-F]{40}$/, "Invalid hex address");
 const hexPrivateKey = z.string().regex(/^0x[0-9a-fA-F]{64}$/, "Invalid private key");
@@ -28,6 +29,6 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
 		// Never log the actual private key value
 		...(issue.path.includes("BOT_PRIVATE_KEY") ? { received: "[REDACTED]" } : {}),
 	}));
-	console.error("Config validation failed:", JSON.stringify(safeIssues, null, 2));
+	logger.error({ issues: safeIssues }, "Config validation failed");
 	process.exit(1);
 }
