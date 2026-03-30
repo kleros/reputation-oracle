@@ -37,7 +37,11 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
   2. Intentionally triggering an RPC error with a private key in the cause chain produces log output with the key redacted
   3. Every bot run ends with a single summary JSON line containing items found, actions computed, txs sent, errors, and duration
   4. Setting LOG_LEVEL=debug produces more output than the default; LOG_LEVEL=warn suppresses info lines
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 04-01-PLAN.md — Logger module, pino deps, config LOG_LEVEL, RunSummary type
+- [ ] 04-02-PLAN.md — Migrate all console calls to structured logger, add run summary
 
 ### Phase 5: Transaction Safety
 **Goal**: Bot handles transaction failures, wallet depletion, and process signals without leaving ambiguous state
@@ -48,7 +52,11 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
   2. A null or timed-out receipt is logged with its tx hash and the bot exits with a non-zero code; next run re-diffs and picks up the action
   3. Running the bot with an empty wallet exits immediately with a clear "insufficient balance" error before any transaction attempt
   4. Sending SIGTERM while the bot is mid-batch finishes the current transaction, skips remaining actions, and exits cleanly with a summary log
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 04-01-PLAN.md — Logger module, pino deps, config LOG_LEVEL, RunSummary type
+- [ ] 04-02-PLAN.md — Migrate all console calls to structured logger, add run summary
 
 ### Phase 6: IPFS Evidence
 **Goal**: Feedback transactions reference IPFS-pinned evidence instead of inline data URIs
@@ -60,7 +68,11 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
   3. When a single Pinata upload fails, that item is skipped and logged; the rest of the batch proceeds normally
   4. All IPFS uploads complete before any transaction is submitted (prepare/execute split)
   5. Running the bot without PINATA_JWT configured skips items that need evidence upload and logs a warning
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 04-01-PLAN.md — Logger module, pino deps, config LOG_LEVEL, RunSummary type
+- [ ] 04-02-PLAN.md — Migrate all console calls to structured logger, add run summary
 
 ## Progress
 
@@ -70,7 +82,7 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 | 2. Stateless Bot | v1.0 | 4/4 | Complete | 2026-03-26 |
 | 3. End-to-End Verification | v1.0 | 2/2 | Complete | 2026-03-27 |
 | 1000. Upgrade bot deps | — | 2/2 | Complete | 2026-03-27 |
-| 4. Structured Logging | v1.1 | 0/? | Not started | - |
+| 4. Structured Logging | v1.1 | 0/2 | Planned | - |
 | 5. Transaction Safety | v1.1 | 0/? | Not started | - |
 | 6. IPFS Evidence | v1.1 | 0/? | Not started | - |
 
