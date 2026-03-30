@@ -40,7 +40,7 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 **Plans**: 2 plans
 
 Plans:
-- [ ] 04-01-PLAN.md — Logger module, pino deps, config LOG_LEVEL, RunSummary type
+- [x] 04-01-PLAN.md — Logger module, pino deps, config LOG_LEVEL, RunSummary type
 - [ ] 04-02-PLAN.md — Migrate all console calls to structured logger, add run summary
 
 ### Phase 5: Transaction Safety
