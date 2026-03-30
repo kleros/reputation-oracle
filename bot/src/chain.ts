@@ -9,8 +9,8 @@ import {
 import { privateKeyToAccount } from "viem/accounts";
 import { routerAbi } from "./abi/router.js";
 import type { Config } from "./config.js";
-import { createChildLogger } from "./logger.js";
 import { buildFeedbackURI, buildNegativeEvidence, buildPositiveEvidence } from "./evidence.js";
+import { createChildLogger } from "./logger.js";
 import { type Action, FeedbackType } from "./types.js";
 
 const log = createChildLogger("chain");
