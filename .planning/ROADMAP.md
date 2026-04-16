@@ -22,7 +22,7 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 
 **Milestone Goal:** Make the bot production-ready with structured logging, transaction safety, and IPFS evidence upload.
 
-- [ ] **Phase 4: Structured Logging** - pino logger with JSON output, secret redaction, and run summary
+- [x] **Phase 4: Structured Logging** - pino logger with JSON output, secret redaction, and run summary — completed 2026-03-30
 - [ ] **Phase 5: Transaction Safety** - Gas retry, balance preflight, receipt handling, graceful shutdown
 - [ ] **Phase 6: IPFS Evidence** - Pinata upload with prepare/execute split and failure isolation
 
@@ -52,11 +52,7 @@ Plans:
   2. A null or timed-out receipt is logged with its tx hash and the bot exits with a non-zero code; next run re-diffs and picks up the action
   3. Running the bot with an empty wallet exits immediately with a clear "insufficient balance" error before any transaction attempt
   4. Sending SIGTERM while the bot is mid-batch finishes the current transaction, skips remaining actions, and exits cleanly with a summary log
-**Plans**: 2 plans
-
-Plans:
-- [x] 04-01-PLAN.md — Logger module, pino deps, config LOG_LEVEL, RunSummary type
-- [ ] 04-02-PLAN.md — Migrate all console calls to structured logger, add run summary
+**Plans**: _(not yet planned)_
 
 ### Phase 6: IPFS Evidence
 **Goal**: Feedback transactions reference IPFS-pinned evidence instead of inline data URIs
@@ -68,11 +64,7 @@ Plans:
   3. When a single Pinata upload fails, that item is skipped and logged; the rest of the batch proceeds normally
   4. All IPFS uploads complete before any transaction is submitted (prepare/execute split)
   5. Running the bot without PINATA_JWT configured skips items that need evidence upload and logs a warning
-**Plans**: 2 plans
-
-Plans:
-- [ ] 04-01-PLAN.md — Logger module, pino deps, config LOG_LEVEL, RunSummary type
-- [ ] 04-02-PLAN.md — Migrate all console calls to structured logger, add run summary
+**Plans**: _(not yet planned)_
 
 ## Progress
 
@@ -82,8 +74,8 @@ Plans:
 | 2. Stateless Bot | v1.0 | 4/4 | Complete | 2026-03-26 |
 | 3. End-to-End Verification | v1.0 | 2/2 | Complete | 2026-03-27 |
 | 1000. Upgrade bot deps | — | 2/2 | Complete | 2026-03-27 |
-| 4. Structured Logging | v1.1 | 0/2 | Planned | - |
-| 5. Transaction Safety | v1.1 | 0/? | Not started | - |
+| 4. Structured Logging | v1.1 | 2/2 | Complete | 2026-03-30 |
+| 5. Transaction Safety | v1.1 | 0/? | Next | - |
 | 6. IPFS Evidence | v1.1 | 0/? | Not started | - |
 
 ### Phase 1000: Upgrade bot dependencies to latest majors

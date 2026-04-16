@@ -78,6 +78,7 @@ See [`contracts/README.md`](./contracts/README.md) for deployed addresses and de
 | TypeScript | ^5.7 | Bot language (viem requires strict TS) |
 | Node.js | 22 LTS | Runtime (native `--env-file`, stable fetch) |
 | viem | ^2.47 | Ethereum client (type-safe, native Multicall3) |
+| pino | ^10.3 | Structured JSON logging to stderr, secret redaction, child loggers |
 | zod | ^4.3 | Config validation with secret redaction |
 | graphql-request | ^7.4 | Subgraph queries |
 | tsx | ^4.21 | TypeScript execution |
@@ -85,7 +86,7 @@ See [`contracts/README.md`](./contracts/README.md) for deployed addresses and de
 | Biome.js | ^2.4 | Linting + formatting (replaces ESLint + Prettier) |
 | vitest | ^4.1 | Bot unit/integration tests |
 
-**Do NOT use:** ethers.js v5 (deprecated), dotenv (Node 22 has `--env-file`), hardhat (use Foundry), axios (use native fetch), any local DB (stateless architecture), transparent proxy (use UUPS).
+**Do NOT use:** ethers.js v5 (deprecated), dotenv (Node 22 has `--env-file`), hardhat (use Foundry), axios (use native fetch), any local DB (stateless architecture), transparent proxy (use UUPS), console.log/warn/error (use pino logger from `bot/src/logger.ts`).
 
 See `.planning/research/STACK.md` for full rationale, alternatives, and version compatibility.
 <!-- GSD:stack-end -->

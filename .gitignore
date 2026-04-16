@@ -20,6 +20,7 @@ Thumbs.db
 # Claude Code
 .claude/settings.local.json*
 .claude/worktrees
+.claude-backup*
 
 # Foundry (contracts/)
 contracts/cache/

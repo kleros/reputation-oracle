@@ -34,7 +34,7 @@ Kleros-backed, economically-secured reputation signals for ERC-8004 AI agents �
 **Target features:**
 - IPFS evidence upload via Pinata — replace data: URI with IPFS CID for feedbackURI
 - Transaction safety — gas retry, dropped receipt handling, balance preflight, SIGTERM graceful shutdown
-- Structured JSON logging — replace console.log with structured output for debugging and monitoring
+- ~~Structured JSON logging — replace console.log with structured output for debugging and monitoring~~ ✅ Phase 4 complete (2026-03-30)
 
 ### Out of Scope
 
@@ -83,6 +83,7 @@ Kleros-backed, economically-secured reputation signals for ERC-8004 AI agents �
 | Kleros v1 arbitrator | Current PGTCR uses v1; architecture supports future v2 migration | ✓ v1.0 — Phase 1 |
 | History accumulates on re-registration | Agent removed then re-accepted shows mixed record (-95, +95); no revoke of old negative | ✓ v1.0 — Phase 1 |
 | Upgradeable Router contract | Future multi-list and multi-product extensions without redeployment | ✓ v1.0 — Phase 1 |
+| Pino structured logging (no console) | Machine-parseable NDJSON on stderr, stdout reserved for --dry-run output, secret redaction built-in | ✓ v1.1 — Phase 4 |
 
 ## Evolution
 

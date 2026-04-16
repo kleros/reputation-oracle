@@ -76,7 +76,7 @@ npm run start
 | Layer | Technology |
 |-------|-----------|
 | Contract | Solidity, Foundry, OpenZeppelin UUPS |
-| Bot | TypeScript, viem, graphql-request |
+| Bot | TypeScript, viem, graphql-request, pino |
 | Testing | Foundry fork tests, Vitest |
 | Tooling | Biome.js, Zod |
 
