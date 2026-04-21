@@ -139,8 +139,11 @@ export async function executeActions(
 		const agentIdStr = action.agentId.toString();
 
 		// Step 1: Gas estimation with retry (D-08/D-09/D-10)
+		// Build evidence and feedbackURI ONCE per action so gas estimate and writeContract
+		// use identical calldata (WR-01 — avoids createdAt timestamp drift between the two calls).
 		let gasEstimate: bigint;
 		let gasParams: EstimateContractGasParameters;
+		let feedbackURI: string | undefined;
 
 		if (action.type === "submitPositiveFeedback") {
 			const evidence = buildPositiveEvidence({
@@ -151,7 +154,7 @@ export async function executeActions(
 				chainId: config.CHAIN_ID,
 				stake: action.item.stake,
 			});
-			const feedbackURI = buildFeedbackURI(evidence);
+			feedbackURI = buildFeedbackURI(evidence);
 			gasParams = {
 				address: config.ROUTER_ADDRESS as `0x${string}`,
 				abi: routerAbi,
@@ -169,7 +172,7 @@ export async function executeActions(
 				stake: action.item.stake,
 				disputeId: action.item.disputeId,
 			});
-			const feedbackURI = buildFeedbackURI(evidence);
+			feedbackURI = buildFeedbackURI(evidence);
 			gasParams = {
 				address: config.ROUTER_ADDRESS as `0x${string}`,
 				abi: routerAbi,
@@ -208,45 +211,27 @@ export async function executeActions(
 		}
 
 		// Step 2: Submit transaction — NEVER retried (D-11)
+		// feedbackURI was built once above (WR-01) — reuse here so calldata is identical.
 		let hash: `0x${string}`;
 
 		try {
 			if (action.type === "submitPositiveFeedback") {
-				const evidence = buildPositiveEvidence({
-					agentId: action.agentId,
-					pgtcrItemId: action.pgtcrItemId,
-					pgtcrAddress: config.PGTCR_ADDRESS,
-					routerAddress: config.ROUTER_ADDRESS,
-					chainId: config.CHAIN_ID,
-					stake: action.item.stake,
-				});
-				const feedbackURI = buildFeedbackURI(evidence);
 				hash = await walletClient.writeContract({
 					address: config.ROUTER_ADDRESS as `0x${string}`,
 					abi: routerAbi,
 					functionName: "submitPositiveFeedback",
-					args: [action.agentId, action.pgtcrItemId as `0x${string}`, feedbackURI],
+					args: [action.agentId, action.pgtcrItemId as `0x${string}`, feedbackURI as string],
 					nonce,
 					chain: walletClient.chain,
 					account,
 					gas: gasEstimate,
 				});
 			} else if (action.type === "submitNegativeFeedback") {
-				const evidence = buildNegativeEvidence({
-					agentId: action.agentId,
-					pgtcrItemId: action.item.pgtcrItemId,
-					pgtcrAddress: config.PGTCR_ADDRESS,
-					routerAddress: config.ROUTER_ADDRESS,
-					chainId: config.CHAIN_ID,
-					stake: action.item.stake,
-					disputeId: action.item.disputeId,
-				});
-				const feedbackURI = buildFeedbackURI(evidence);
 				hash = await walletClient.writeContract({
 					address: config.ROUTER_ADDRESS as `0x${string}`,
 					abi: routerAbi,
 					functionName: "submitNegativeFeedback",
-					args: [action.agentId, feedbackURI],
+					args: [action.agentId, feedbackURI as string],
 					nonce,
 					chain: walletClient.chain,
 					account,
