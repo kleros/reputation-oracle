@@ -60,12 +60,26 @@ export interface EvidenceJson {
 	};
 }
 
-/** Run summary emitted as the final log line before exit (D-05). */
+/** Run summary emitted as the final log line before exit (D-05, extended by D-20). */
 export interface RunSummary {
 	items: number;
 	valid: number;
 	actions: number;
-	txSent: number;
+	txSent: number; // counts only confirmed non-reverted receipts (semantic change from Phase 4)
 	errors: number;
 	durationMs: number;
+	skipped: number; // count of item-specific skips during this run (D-20)
+	systemicFailure?: string; // reason from D-19 taxonomy; absent on success (D-20)
+}
+
+/** Return type of executeActions() — replaces Promise<void> (D-20). */
+export interface ExecuteActionsResult {
+	skipped: number;
+	txSent: number;
+	systemicFailure?: string; // reason code from D-19 taxonomy; absent on success
+}
+
+/** Mutable object threaded from index.ts into executeActions() to propagate SIGTERM/SIGINT (D-05). */
+export interface ShutdownHolder {
+	shutdown: boolean;
 }
