@@ -3,8 +3,8 @@ import {
 	ContractFunctionRevertedError,
 	HttpRequestError,
 	type PublicClient,
-	type WalletClient,
 	WaitForTransactionReceiptTimeoutError,
+	type WalletClient,
 } from "viem";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { executeActions } from "../src/chain.js";
@@ -99,9 +99,7 @@ describe("executeActions — differentiated failure policy", () => {
 	it("SC-1a: skips action on gas estimation revert, continues to next action", async () => {
 		const action1 = makeAction(1n);
 		const action2 = makeAction(2n);
-		vi.mocked(publicClient.estimateContractGas)
-			.mockRejectedValueOnce(makeRevertError())
-			.mockResolvedValueOnce(21000n);
+		vi.mocked(publicClient.estimateContractGas).mockRejectedValueOnce(makeRevertError()).mockResolvedValueOnce(21000n);
 		vi.mocked(walletClient.writeContract).mockResolvedValueOnce("0xhash1" as `0x${string}`);
 		vi.mocked(publicClient.waitForTransactionReceipt).mockResolvedValueOnce({ status: "success" } as any);
 
@@ -139,7 +137,7 @@ describe("executeActions — differentiated failure policy", () => {
 		vi.mocked(publicClient.estimateContractGas).mockResolvedValueOnce(21000n);
 		vi.mocked(walletClient.writeContract).mockResolvedValueOnce("0xdeadbeef" as `0x${string}`);
 		vi.mocked(publicClient.waitForTransactionReceipt).mockRejectedValueOnce(
-			new WaitForTransactionReceiptTimeoutError({ hash: "0xdeadbeef" as `0x${string}`, timeout: 5000 }),
+			new WaitForTransactionReceiptTimeoutError({ hash: "0xdeadbeef" as `0x${string}` }),
 		);
 
 		const result = await executeActions(walletClient, publicClient, [action], mockConfig, shutdownHolder);
@@ -174,7 +172,7 @@ describe("executeActions — differentiated failure policy", () => {
 		vi.mocked(publicClient.waitForTransactionReceipt).mockImplementationOnce(async () => {
 			// Set shutdown flag AFTER action 1 completes
 			shutdownHolder.shutdown = true;
-			return { status: "success" };
+			return { status: "success" } as any;
 		});
 
 		const result = await executeActions(walletClient, publicClient, [action1, action2], mockConfig, shutdownHolder);

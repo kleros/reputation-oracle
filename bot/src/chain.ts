@@ -1,12 +1,12 @@
 import {
 	type Chain,
 	type EstimateContractGasParameters,
-	TransactionExecutionError,
-	WaitForTransactionReceiptTimeoutError,
 	http,
 	type PublicClient,
+	TransactionExecutionError,
 	createPublicClient as viemCreatePublicClient,
 	createWalletClient as viemCreateWalletClient,
+	WaitForTransactionReceiptTimeoutError,
 	type WalletClient,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
@@ -192,9 +192,7 @@ export async function executeActions(
 		} catch (err) {
 			// isRevertError: immediate throw from estimateGasWithRetry (no retry happened)
 			// !isRevertError: exhausted retries on transient error
-			const reason = isRevertError(err)
-				? "gas_estimation_reverted"
-				: "gas_estimation_exhausted";
+			const reason = isRevertError(err) ? "gas_estimation_reverted" : "gas_estimation_exhausted";
 			log.warn(
 				{
 					action: action.type,
@@ -268,10 +266,7 @@ export async function executeActions(
 			}
 		} catch (err) {
 			if (isRevertError(err)) {
-				log.warn(
-					{ action: action.type, agentId: agentIdStr, reason: "submission_reverted" },
-					"Action skipped",
-				);
+				log.warn({ action: action.type, agentId: agentIdStr, reason: "submission_reverted" }, "Action skipped");
 				skipped++;
 				continue;
 			}
