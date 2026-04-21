@@ -52,7 +52,13 @@ Plans:
   2. A null or timed-out receipt is logged with its tx hash and the bot exits with a non-zero code; next run re-diffs and picks up the action
   3. Running the bot with an empty wallet exits immediately with a clear "insufficient balance" error before any transaction attempt
   4. Sending SIGTERM while the bot is mid-batch finishes the current transaction, skips remaining actions, and exits cleanly with a summary log
-**Plans**: _(not yet planned)_
+**Plans**: 4 plans
+
+Plans:
+- [ ] 05-01-PLAN.md — Extend types.ts (RunSummary+, ExecuteActionsResult, ShutdownHolder), add TX_RECEIPT_TIMEOUT_MS + MIN_BALANCE_WEI to config.ts and .env.example
+- [ ] 05-02-PLAN.md — New bot/src/tx.ts (estimateGasWithRetry, isRevertError, isTransientError) + bot/test/tx.test.ts
+- [ ] 05-03-PLAN.md — Rewrite executeActions() in chain.ts with differentiated failure policy + bot/test/chain.test.ts
+- [ ] 05-04-PLAN.md — Wire index.ts: signal handlers, balance preflight, flushAndExit, result wiring + human-verify checkpoint
 
 ### Phase 6: IPFS Evidence
 **Goal**: Feedback transactions reference IPFS-pinned evidence instead of inline data URIs
@@ -75,7 +81,7 @@ Plans:
 | 3. End-to-End Verification | v1.0 | 2/2 | Complete | 2026-03-27 |
 | 1000. Upgrade bot deps | — | 2/2 | Complete | 2026-03-27 |
 | 4. Structured Logging | v1.1 | 2/2 | Complete | 2026-03-30 |
-| 5. Transaction Safety | v1.1 | 0/? | Next | - |
+| 5. Transaction Safety | v1.1 | 0/4 | Next | - |
 | 6. IPFS Evidence | v1.1 | 0/? | Not started | - |
 
 ### Phase 1000: Upgrade bot dependencies to latest majors
