@@ -92,3 +92,27 @@ describe("buildNegativeEvidence", () => {
 		expect(evidence.kleros.ruling).toBe(2);
 	});
 });
+
+describe("formatStake precision (IN-01)", () => {
+	it("formats small stake (0.002 ETH) without precision loss", () => {
+		const evidence = buildPositiveEvidence({ ...baseParams, stake: "2000000000000000" });
+		expect(evidence.kleros.stakeAmount).toBe("0.002");
+	});
+
+	it("formats large stake exactly: 100 ETH (> Number.MAX_SAFE_INTEGER wei)", () => {
+		// 100 ETH = 100_000_000_000_000_000_000 wei (20 digits — beyond Number.MAX_SAFE_INTEGER)
+		const evidence = buildPositiveEvidence({ ...baseParams, stake: "100000000000000000000" });
+		expect(evidence.kleros.stakeAmount).toBe("100");
+	});
+
+	it("formats fractional large stake: 100.5 ETH", () => {
+		// 100.5 ETH = 100_500_000_000_000_000_000 wei
+		const evidence = buildPositiveEvidence({ ...baseParams, stake: "100500000000000000000" });
+		expect(evidence.kleros.stakeAmount).toBe("100.5");
+	});
+
+	it("returns '0' for null stake", () => {
+		const evidence = buildPositiveEvidence({ ...baseParams, stake: null });
+		expect(evidence.kleros.stakeAmount).toBe("0");
+	});
+});

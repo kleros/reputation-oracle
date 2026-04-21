@@ -81,11 +81,13 @@ export function buildFeedbackURI(evidence: EvidenceJson): string {
 /**
  * Format stake from wei string to human-readable ETH.
  * Returns "0" if stake is null/empty.
+ * Uses bigint arithmetic to avoid precision loss for stakes > 9.007 ETH (IN-01).
  */
 function formatStake(stake: string | null): string {
 	if (!stake) return "0";
-	// Convert wei to ETH (18 decimals)
 	const wei = BigInt(stake);
-	const eth = Number(wei) / 1e18;
-	return eth.toString();
+	const eth = wei / 10n ** 18n;
+	const rem = wei % 10n ** 18n;
+	if (rem === 0n) return eth.toString();
+	return `${eth}.${rem.toString().padStart(18, "0").replace(/0+$/, "")}`;
 }
