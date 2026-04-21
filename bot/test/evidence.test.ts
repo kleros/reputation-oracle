@@ -16,7 +16,7 @@ describe("buildFeedbackURI", () => {
 		const evidence: EvidenceJson = {
 			schema: "kleros-reputation-oracle/v1",
 			agentRegistry: "eip155:11155111:0x8004A818BFB912233c491871b3d84c89A494BD9e",
-			agentId: 42,
+			agentId: "42",
 			clientAddress: "eip155:11155111:0xRouter",
 			createdAt: "2026-03-26T00:00:00.000Z",
 			value: 95,
@@ -41,7 +41,7 @@ describe("buildFeedbackURI", () => {
 		const evidence: EvidenceJson = {
 			schema: "kleros-reputation-oracle/v1",
 			agentRegistry: "eip155:11155111:0x8004A818BFB912233c491871b3d84c89A494BD9e",
-			agentId: 42,
+			agentId: "42",
 			clientAddress: "eip155:11155111:0xRouter",
 			createdAt: "2026-03-26T00:00:00.000Z",
 			value: 95,
@@ -62,7 +62,7 @@ describe("buildFeedbackURI", () => {
 		const base64 = uri.replace("data:application/json;base64,", "");
 		const decoded = JSON.parse(Buffer.from(base64, "base64").toString("utf-8"));
 		expect(decoded.schema).toBe("kleros-reputation-oracle/v1");
-		expect(decoded.agentId).toBe(42);
+		expect(decoded.agentId).toBe("42");
 		expect(decoded.tag1).toBe("verified");
 	});
 });

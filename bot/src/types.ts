@@ -43,7 +43,7 @@ export type Action =
 export interface EvidenceJson {
 	schema: "kleros-reputation-oracle/v1";
 	agentRegistry: string;
-	agentId: number;
+	agentId: string; // decimal string — lossless for uint256 agent IDs above Number.MAX_SAFE_INTEGER
 	clientAddress: string;
 	createdAt: string;
 	value: number;

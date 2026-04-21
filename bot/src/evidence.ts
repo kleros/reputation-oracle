@@ -23,7 +23,7 @@ export function buildPositiveEvidence(params: EvidenceParams): EvidenceJson {
 	return {
 		schema: "kleros-reputation-oracle/v1",
 		agentRegistry: `eip155:${params.chainId}:${AGENT_REGISTRY_ADDRESS}`,
-		agentId: Number(params.agentId),
+		agentId: params.agentId.toString(),
 		clientAddress: `eip155:${params.chainId}:${params.routerAddress}`,
 		createdAt: new Date().toISOString(),
 		value: 95,
@@ -50,7 +50,7 @@ export function buildNegativeEvidence(params: NegativeEvidenceParams): EvidenceJ
 	return {
 		schema: "kleros-reputation-oracle/v1",
 		agentRegistry: `eip155:${params.chainId}:${AGENT_REGISTRY_ADDRESS}`,
-		agentId: Number(params.agentId),
+		agentId: params.agentId.toString(),
 		clientAddress: `eip155:${params.chainId}:${params.routerAddress}`,
 		createdAt: new Date().toISOString(),
 		value: -95,
