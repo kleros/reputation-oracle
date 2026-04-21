@@ -94,6 +94,17 @@ describe("estimateGasWithRetry", () => {
 		await expect(estimateGasWithRetry(mockPublicClient as PublicClient, dummyParams)).rejects.toThrow();
 		expect(mockPublicClient.estimateContractGas).toHaveBeenCalledTimes(1);
 	});
+
+	it("throws immediately on non-transient non-revert error without retrying (WR-03)", async () => {
+		// A plain Error is not a BaseError — isTransientError returns false
+		const plainErr = new Error("unexpected programming error");
+		vi.mocked(mockPublicClient.estimateContractGas).mockRejectedValueOnce(plainErr);
+		await expect(estimateGasWithRetry(mockPublicClient as PublicClient, dummyParams)).rejects.toThrow(
+			"unexpected programming error",
+		);
+		// Must not retry — only one call
+		expect(mockPublicClient.estimateContractGas).toHaveBeenCalledTimes(1);
+	});
 });
 
 describe("isRevertError", () => {

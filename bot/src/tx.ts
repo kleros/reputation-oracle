@@ -33,6 +33,9 @@ export async function estimateGasWithRetry(
 			if (isRevertError(err)) {
 				throw err; // immediate — no retry for reverts
 			}
+			if (!isTransientError(err)) {
+				throw err; // fail fast on unexpected non-transient errors (WR-03)
+			}
 			if (attempt < MAX_ATTEMPTS) {
 				// delays: 1000ms before attempt 2, 2000ms before attempt 3
 				log.debug({ attempt, delayMs: BASE_DELAY_MS * 2 ** (attempt - 1) }, "Gas estimation failed, retrying");
