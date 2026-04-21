@@ -1,5 +1,8 @@
 import {
 	type Chain,
+	type EstimateContractGasParameters,
+	TransactionExecutionError,
+	WaitForTransactionReceiptTimeoutError,
 	http,
 	type PublicClient,
 	createPublicClient as viemCreatePublicClient,
@@ -11,7 +14,8 @@ import { routerAbi } from "./abi/router.js";
 import type { Config } from "./config.js";
 import { buildFeedbackURI, buildNegativeEvidence, buildPositiveEvidence } from "./evidence.js";
 import { createChildLogger } from "./logger.js";
-import { type Action, FeedbackType } from "./types.js";
+import { estimateGasWithRetry, isRevertError } from "./tx.js";
+import { type Action, type ExecuteActionsResult, FeedbackType, type ShutdownHolder } from "./types.js";
 
 const log = createChildLogger("chain");
 
@@ -96,30 +100,47 @@ export async function readRouterStates(
 }
 
 /**
- * Execute actions sequentially with explicit nonce management.
- * Stops on first failure (D-10).
+ * Execute actions sequentially with differentiated failure policy (D-01).
+ * - Item-specific failures (gas revert, submission revert, receipt revert, gas exhausted): skip + continue
+ * - Systemic failures (receipt timeout, non-revert submission error): return systemicFailure reason
+ * - Graceful shutdown: check shutdownHolder before each action; finish current tx if in-flight
+ * Returns ExecuteActionsResult (never throws for classified errors).
  */
 export async function executeActions(
 	walletClient: WalletClient,
 	publicClient: PublicClient,
 	actions: Action[],
 	config: Config,
-): Promise<void> {
+	shutdownHolder: ShutdownHolder,
+): Promise<ExecuteActionsResult> {
+	let skipped = 0;
+	let txSent = 0;
+
 	if (actions.length === 0) {
 		log.info("No actions to execute");
-		return;
+		return { skipped, txSent };
 	}
 
 	const account = walletClient.account;
 	if (!account) throw new Error("WalletClient has no account");
 
-	// Fetch nonce once at start (D-09)
+	// Fetch nonce once at start (D-09 — fetch once, increment locally)
 	let nonce = await publicClient.getTransactionCount({
 		address: account.address,
 	});
 
 	for (const action of actions) {
-		let hash: `0x${string}`;
+		// Check shutdown flag before starting each action (D-03/D-05)
+		if (shutdownHolder.shutdown) {
+			log.info("Shutdown requested, skipping remaining actions");
+			break;
+		}
+
+		const agentIdStr = action.agentId.toString();
+
+		// Step 1: Gas estimation with retry (D-08/D-09/D-10)
+		let gasEstimate: bigint;
+		let gasParams: EstimateContractGasParameters;
 
 		if (action.type === "submitPositiveFeedback") {
 			const evidence = buildPositiveEvidence({
@@ -131,16 +152,13 @@ export async function executeActions(
 				stake: action.item.stake,
 			});
 			const feedbackURI = buildFeedbackURI(evidence);
-
-			hash = await walletClient.writeContract({
+			gasParams = {
 				address: config.ROUTER_ADDRESS as `0x${string}`,
 				abi: routerAbi,
 				functionName: "submitPositiveFeedback",
 				args: [action.agentId, action.pgtcrItemId as `0x${string}`, feedbackURI],
-				nonce,
-				chain: walletClient.chain,
 				account,
-			});
+			};
 		} else if (action.type === "submitNegativeFeedback") {
 			const evidence = buildNegativeEvidence({
 				agentId: action.agentId,
@@ -152,41 +170,168 @@ export async function executeActions(
 				disputeId: action.item.disputeId,
 			});
 			const feedbackURI = buildFeedbackURI(evidence);
-
-			hash = await walletClient.writeContract({
+			gasParams = {
 				address: config.ROUTER_ADDRESS as `0x${string}`,
 				abi: routerAbi,
 				functionName: "submitNegativeFeedback",
 				args: [action.agentId, feedbackURI],
-				nonce,
-				chain: walletClient.chain,
 				account,
-			});
+			};
 		} else {
-			// revokeOnly
-			hash = await walletClient.writeContract({
+			gasParams = {
 				address: config.ROUTER_ADDRESS as `0x${string}`,
 				abi: routerAbi,
 				functionName: "revokeOnly",
 				args: [action.agentId],
-				nonce,
-				chain: walletClient.chain,
 				account,
+			};
+		}
+
+		try {
+			gasEstimate = await estimateGasWithRetry(publicClient, gasParams);
+		} catch (err) {
+			// isRevertError: immediate throw from estimateGasWithRetry (no retry happened)
+			// !isRevertError: exhausted retries on transient error
+			const reason = isRevertError(err)
+				? "gas_estimation_reverted"
+				: "gas_estimation_exhausted";
+			log.warn(
+				{
+					action: action.type,
+					agentId: agentIdStr,
+					reason,
+					...(reason === "gas_estimation_exhausted" ? { attempts: 3 } : {}),
+					lastError: err instanceof Error ? err.message : String(err),
+				},
+				"Action skipped",
+			);
+			skipped++;
+			continue;
+		}
+
+		// Step 2: Submit transaction — NEVER retried (D-11)
+		let hash: `0x${string}`;
+
+		try {
+			if (action.type === "submitPositiveFeedback") {
+				const evidence = buildPositiveEvidence({
+					agentId: action.agentId,
+					pgtcrItemId: action.pgtcrItemId,
+					pgtcrAddress: config.PGTCR_ADDRESS,
+					routerAddress: config.ROUTER_ADDRESS,
+					chainId: config.CHAIN_ID,
+					stake: action.item.stake,
+				});
+				const feedbackURI = buildFeedbackURI(evidence);
+				hash = await walletClient.writeContract({
+					address: config.ROUTER_ADDRESS as `0x${string}`,
+					abi: routerAbi,
+					functionName: "submitPositiveFeedback",
+					args: [action.agentId, action.pgtcrItemId as `0x${string}`, feedbackURI],
+					nonce,
+					chain: walletClient.chain,
+					account,
+					gas: gasEstimate,
+				});
+			} else if (action.type === "submitNegativeFeedback") {
+				const evidence = buildNegativeEvidence({
+					agentId: action.agentId,
+					pgtcrItemId: action.item.pgtcrItemId,
+					pgtcrAddress: config.PGTCR_ADDRESS,
+					routerAddress: config.ROUTER_ADDRESS,
+					chainId: config.CHAIN_ID,
+					stake: action.item.stake,
+					disputeId: action.item.disputeId,
+				});
+				const feedbackURI = buildFeedbackURI(evidence);
+				hash = await walletClient.writeContract({
+					address: config.ROUTER_ADDRESS as `0x${string}`,
+					abi: routerAbi,
+					functionName: "submitNegativeFeedback",
+					args: [action.agentId, feedbackURI],
+					nonce,
+					chain: walletClient.chain,
+					account,
+					gas: gasEstimate,
+				});
+			} else {
+				hash = await walletClient.writeContract({
+					address: config.ROUTER_ADDRESS as `0x${string}`,
+					abi: routerAbi,
+					functionName: "revokeOnly",
+					args: [action.agentId],
+					nonce,
+					chain: walletClient.chain,
+					account,
+					gas: gasEstimate,
+				});
+			}
+		} catch (err) {
+			if (isRevertError(err)) {
+				log.warn(
+					{ action: action.type, agentId: agentIdStr, reason: "submission_reverted" },
+					"Action skipped",
+				);
+				skipped++;
+				continue;
+			}
+			// Non-revert submission error: systemic stop (D-11, D-19)
+			log.error(
+				{
+					action: action.type,
+					agentId: agentIdStr,
+					reason: "submission_failed_non_revert",
+					lastError: err instanceof Error ? err.message : String(err),
+				},
+				"Systemic failure: tx submission failed",
+			);
+			return { skipped, txSent, systemicFailure: "submission_failed_non_revert" };
+		}
+
+		// Step 3: Wait for receipt (D-12/D-13/D-15)
+		try {
+			const receipt = await publicClient.waitForTransactionReceipt({
+				hash,
+				timeout: config.TX_RECEIPT_TIMEOUT_MS,
 			});
+
+			if (receipt.status === "reverted") {
+				// Item-specific skip (D-15 — revises Phase 2 D-10's throw)
+				log.warn(
+					{ action: action.type, agentId: agentIdStr, txHash: hash, reason: "receipt_reverted" },
+					"Action skipped",
+				);
+				skipped++;
+				continue;
+			}
+
+			// Success
+			nonce++;
+			txSent++;
+			log.info({ txHash: hash, action: action.type, agentId: agentIdStr }, "TX confirmed");
+		} catch (err) {
+			if (err instanceof WaitForTransactionReceiptTimeoutError) {
+				// Systemic stop — log hash from outer scope (Pitfall C: error doesn't expose hash)
+				log.error(
+					{
+						txHash: hash,
+						action: action.type,
+						agentId: agentIdStr,
+						timeoutMs: config.TX_RECEIPT_TIMEOUT_MS,
+						reason: "receipt_timeout",
+					},
+					"Receipt timeout — tx may still be pending",
+				);
+				return { skipped, txSent, systemicFailure: "receipt_timeout" };
+			}
+			// Unknown receipt error: systemic stop
+			log.error(
+				{ txHash: hash, action: action.type, agentId: agentIdStr, reason: "receipt_null" },
+				"Null or unexpected receipt error",
+			);
+			return { skipped, txSent, systemicFailure: "receipt_null" };
 		}
-
-		// Wait for receipt with bounded timeout
-		const receipt = await publicClient.waitForTransactionReceipt({
-			hash,
-			timeout: 60_000,
-		});
-
-		// Stop on first failure (D-10)
-		if (receipt.status === "reverted") {
-			throw new Error(`Transaction reverted: ${hash} for ${action.type} agentId=${action.agentId}`);
-		}
-
-		nonce++;
-		log.info({ txHash: hash, action: action.type, agentId: action.agentId.toString() }, "TX confirmed");
 	}
+
+	return { skipped, txSent };
 }
