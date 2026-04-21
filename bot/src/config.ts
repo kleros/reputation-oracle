@@ -12,6 +12,13 @@ export const configSchema = z.object({
 	SUBGRAPH_URL: z.string().url(),
 	BOT_PRIVATE_KEY: hexPrivateKey,
 	LOG_LEVEL: z.string().optional().default("info"),
+	TX_RECEIPT_TIMEOUT_MS: z.coerce
+		.number()
+		.int()
+		.positive()
+		.optional()
+		.default(120_000),
+	MIN_BALANCE_WEI: z.coerce.bigint().optional().default(5_000_000_000_000_000n),
 });
 
 export type Config = z.infer<typeof configSchema>;
