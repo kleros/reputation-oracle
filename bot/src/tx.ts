@@ -1,9 +1,9 @@
 import {
-	type EstimateContractGasParameters,
-	type PublicClient,
 	BaseError,
 	ContractFunctionRevertedError,
+	type EstimateContractGasParameters,
 	HttpRequestError,
+	type PublicClient,
 	TimeoutError,
 } from "viem";
 import { createChildLogger } from "./logger.js";
@@ -49,9 +49,7 @@ export async function estimateGasWithRetry(
  */
 export function isRevertError(err: unknown): boolean {
 	if (!(err instanceof BaseError)) return false;
-	return (
-		err.walk((e) => e instanceof ContractFunctionRevertedError) instanceof ContractFunctionRevertedError
-	);
+	return err.walk((e) => e instanceof ContractFunctionRevertedError) instanceof ContractFunctionRevertedError;
 }
 
 /**
@@ -59,9 +57,7 @@ export function isRevertError(err: unknown): boolean {
  */
 export function isTransientError(err: unknown): boolean {
 	if (!(err instanceof BaseError)) return false;
-	const inner = err.walk(
-		(e) => e instanceof HttpRequestError || e instanceof TimeoutError,
-	);
+	const inner = err.walk((e) => e instanceof HttpRequestError || e instanceof TimeoutError);
 	return inner instanceof HttpRequestError || inner instanceof TimeoutError;
 }
 

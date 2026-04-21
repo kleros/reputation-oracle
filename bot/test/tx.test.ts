@@ -70,15 +70,19 @@ describe("estimateGasWithRetry", () => {
 
 	it("throws after exhausting 3 attempts on transient error", async () => {
 		vi.mocked(mockPublicClient.estimateContractGas)
-			.mockImplementationOnce(async () => { throw makeHttpError(); })
-			.mockImplementationOnce(async () => { throw makeHttpError(); })
-			.mockImplementationOnce(async () => { throw makeHttpError(); });
+			.mockImplementationOnce(async () => {
+				throw makeHttpError();
+			})
+			.mockImplementationOnce(async () => {
+				throw makeHttpError();
+			})
+			.mockImplementationOnce(async () => {
+				throw makeHttpError();
+			});
 		// Run timers concurrently with the assertion so the rejection is consumed
 		// before Node.js marks it as unhandled (vitest 4 strict rejection detection)
 		await Promise.all([
-			expect(
-				estimateGasWithRetry(mockPublicClient as PublicClient, dummyParams),
-			).rejects.toThrow(),
+			expect(estimateGasWithRetry(mockPublicClient as PublicClient, dummyParams)).rejects.toThrow(),
 			vi.runAllTimersAsync(),
 		]);
 		expect(mockPublicClient.estimateContractGas).toHaveBeenCalledTimes(3);
@@ -87,13 +91,9 @@ describe("estimateGasWithRetry", () => {
 	it("throws immediately on revert error without retrying", async () => {
 		vi.mocked(mockPublicClient.estimateContractGas).mockRejectedValueOnce(makeRevertError());
 		// Revert causes immediate throw — no timers needed, consume rejection right away
-		await expect(
-			estimateGasWithRetry(mockPublicClient as PublicClient, dummyParams),
-		).rejects.toThrow();
+		await expect(estimateGasWithRetry(mockPublicClient as PublicClient, dummyParams)).rejects.toThrow();
 		expect(mockPublicClient.estimateContractGas).toHaveBeenCalledTimes(1);
 	});
-
-
 });
 
 describe("isRevertError", () => {
