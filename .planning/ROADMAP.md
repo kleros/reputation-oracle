@@ -56,7 +56,7 @@ Plans:
 
 Plans:
 - [x] 05-01-PLAN.md — Extend types.ts (RunSummary+, ExecuteActionsResult, ShutdownHolder), add TX_RECEIPT_TIMEOUT_MS + MIN_BALANCE_WEI to config.ts and .env.example
-- [ ] 05-02-PLAN.md — New bot/src/tx.ts (estimateGasWithRetry, isRevertError, isTransientError) + bot/test/tx.test.ts
+- [x] 05-02-PLAN.md — New bot/src/tx.ts (estimateGasWithRetry, isRevertError, isTransientError) + bot/test/tx.test.ts
 - [ ] 05-03-PLAN.md — Rewrite executeActions() in chain.ts with differentiated failure policy + bot/test/chain.test.ts
 - [ ] 05-04-PLAN.md — Wire index.ts: signal handlers, balance preflight, flushAndExit, result wiring + human-verify checkpoint
 
