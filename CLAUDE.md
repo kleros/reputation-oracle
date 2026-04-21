@@ -51,6 +51,18 @@ Revoke-then-negative (Scenario 2) ensures `getSummary` = -95, not average of (+9
 - Kleros v1 arbitrator on Ethereum. PGTCR list supports CAIP-10 multi-chain item registrations.
 - Re-registration after dispute: history accumulates, no revoke of old negative.
 
+## Bot hardening patterns (Phase 5 baseline — apply to any bot change)
+
+- **viem v2 error classification:** use `err.walk(e => e instanceof X)` — NEVER direct `instanceof`. Top-level throws from `estimateContractGas`/`writeContract` are wrapped in `ContractFunctionExecutionError`; the inner typed error is nested. Helpers in `bot/src/tx.ts`: `isRevertError`, `isTransientError`.
+- **pino v10 flush is async:** use callback form `logger.flush(cb)` before `process.exit`. Bare `flush()` + `exit()` drops buffered lines. `pino.final()` was removed in v10. See `flushAndExit()` helper in `bot/src/index.ts`.
+- **zod v4 bigint:** `z.coerce.bigint()` with bigint-literal default: `.default(5_000_000_000_000_000n)` — `n` suffix required.
+- **Nonce after revert:** a reverted on-chain tx STILL consumes a nonce. Always `nonce++` after every mined tx regardless of `receipt.status`. (CR-01 in 05-REVIEW.md — skipping this nonce increment cascades to nonce-too-low errors.)
+- **Build evidence once per action:** `new Date().toISOString()` drifts between gas estimation and submission. Construct `feedbackURI` once before the gas-estimate block in `chain.ts`, reuse for `writeContract`.
+- **BigInt stays BigInt in serialization:** `agentId`, `stake`, and any uint256 values must serialize as decimal strings (`.toString()`), never `Number()`. ERC-8004 agent IDs can exceed 2^53.
+- **Differentiated failure policy:** `executeActions` returns `ExecuteActionsResult` (never throws for classified errors). Item-specific failures (gas revert, submission revert, receipt revert, gas exhausted) → skip + continue. Systemic failures (receipt timeout/null, non-revert submission error, balance below threshold) → return `systemicFailure` reason, `index.ts` exits 1. See `bot/src/chain.ts` and `.planning/phases/05-transaction-safety/05-CONTEXT.md` D-01..D-20 for the full taxonomy.
+- **`writeContract` is NEVER retried.** Retries on submission create duplicate txs with different nonces. Gas estimation retries are capped at 3 attempts and only for transient (not revert) errors.
+- **Signal handlers set a flag, never call `process.exit`:** SIGTERM/SIGINT set `shutdownHolder.shutdown = true`. Main loop checks between actions. `process.exit` only inside `flushAndExit`'s pino callback.
+
 ## Subgraph endpoints
 
 - Sepolia: `https://api.goldsky.com/api/public/project_cmgx9all3003atlp2bqha1zif/subgraphs/pgtcr-sepolia/v0.0.2/gn`
@@ -60,7 +72,7 @@ Revoke-then-negative (Scenario 2) ensures `getSummary` = -95, not average of (+9
 <!-- GSD:project-start source:PROJECT.md -->
 ## Project
 
-**Status:** v1.0 shipped (2026-03-27). Live on Sepolia.
+**Status:** v1.0 shipped (2026-03-27). Live on Sepolia. v1.1 Production Hardening in progress — Phases 4 (Structured Logging) + 5 (Transaction Safety) complete; Phase 6 (IPFS Evidence) remaining.
 
 **Core Value:** Kleros-backed, economically-secured reputation signals for ERC-8004 AI agents — the first reputation oracle where feedback is backed by real economic stake (WETH bonds) and human jury rulings.
 
