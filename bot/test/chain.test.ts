@@ -146,7 +146,7 @@ describe("executeActions — differentiated failure policy", () => {
 		expect(result.txSent).toBe(0);
 	});
 
-	it("skips action when receipt.status is reverted", async () => {
+	it("skips action when receipt.status is reverted and advances nonce", async () => {
 		const action1 = makeAction(1n);
 		const action2 = makeAction(2n);
 		vi.mocked(publicClient.estimateContractGas).mockResolvedValue(21000n);
@@ -162,6 +162,11 @@ describe("executeActions — differentiated failure policy", () => {
 		expect(result.skipped).toBe(1);
 		expect(result.txSent).toBe(1);
 		expect(result.systemicFailure).toBeUndefined();
+		// Regression: reverted tx consumed a nonce on-chain — the next action
+		// must submit with nonce+1, not reuse the stale nonce (CR-01).
+		const writeCalls = vi.mocked(walletClient.writeContract).mock.calls;
+		expect((writeCalls[0][0] as { nonce: number }).nonce).toBe(0);
+		expect((writeCalls[1][0] as { nonce: number }).nonce).toBe(1);
 	});
 
 	it("SC-4: finishes action 1 when shutdown flag set during action 1, skips action 2", async () => {

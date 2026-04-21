@@ -291,11 +291,14 @@ export async function executeActions(
 			});
 
 			if (receipt.status === "reverted") {
-				// Item-specific skip (D-15 — revises Phase 2 D-10's throw)
+				// Item-specific skip (D-15 — revises Phase 2 D-10's throw).
+				// A reverted tx still consumes a nonce on-chain — advance local counter
+				// so the next action does not reuse it (CR-01).
 				log.warn(
 					{ action: action.type, agentId: agentIdStr, txHash: hash, reason: "receipt_reverted" },
 					"Action skipped",
 				);
+				nonce++;
 				skipped++;
 				continue;
 			}
