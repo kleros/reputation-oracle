@@ -1,4 +1,3 @@
-import { privateKeyToAccount } from "viem/accounts";
 import { createViemPublicClient, createViemWalletClient, executeActions, readRouterStates } from "./chain.js";
 import { loadConfig } from "./config.js";
 import { computeActions } from "./diff.js";
@@ -55,12 +54,14 @@ async function main(): Promise<void> {
 
 		// 6. Read Router state via Multicall3
 		const publicClient = createViemPublicClient(config);
+		// Create walletClient early so we can read account.address without a second
+		// privateKeyToAccount() derivation in the balance preflight below (IN-02).
+		const walletClient = createViemWalletClient(config);
 		logger.info({ agentCount: agentIds.length }, "Reading Router state via Multicall3");
 		const routerStates = await readRouterStates(publicClient, config.ROUTER_ADDRESS, agentIds);
 
 		// Balance preflight — must happen before any transactions (D-06)
-		const account = privateKeyToAccount(config.BOT_PRIVATE_KEY as `0x${string}`);
-		const balance = await publicClient.getBalance({ address: account.address });
+		const balance = await publicClient.getBalance({ address: walletClient.account!.address });
 		if (balance < config.MIN_BALANCE_WEI) {
 			logger.error(
 				{
@@ -105,7 +106,6 @@ async function main(): Promise<void> {
 		}
 
 		// 10. Execute transactions sequentially
-		const walletClient = createViemWalletClient(config);
 		logger.info({ count: actions.length }, "Executing actions sequentially");
 		const result: ExecuteActionsResult = await executeActions(
 			walletClient,
