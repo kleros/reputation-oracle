@@ -77,7 +77,7 @@ Plans:
 - [x] 06-02-PLAN.md — bot/src/ipfs.ts: uploadEvidenceToIPFS with 4-class error handling + 1 retry; bot/test/ipfs.test.ts: D-34 unit matrix (10 cases)
 - [x] 06-03-PLAN.md — bot/src/evidence.ts: buildFeedbackURI signature change to (cid: string) => ipfs://; bot/test/evidence.test.ts: updated assertions
 - [x] 06-04-PLAN.md — bot/src/chain.ts: prepare/execute split with WR-01 invariant + 3-consecutive-failure escalation; bot/test/chain.test.ts: 6 new prepare/execute tests
-- [ ] 06-05-PLAN.md — bot/test/ipfs.integration.test.ts: gated real-Pinata test; bot/vitest.config.ts: unstubGlobals; bot/src/index.ts: IPFS run-summary wiring; bot/.env.example: new env vars
+- [x] 06-05-PLAN.md — bot/test/ipfs.integration.test.ts: gated real-Pinata test; bot/vitest.config.ts: unstubGlobals; bot/src/index.ts: IPFS run-summary wiring; bot/.env.example: new env vars
 
 ## Progress
 
