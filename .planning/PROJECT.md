@@ -24,6 +24,9 @@ Kleros-backed, economically-secured reputation signals for ERC-8004 AI agents �
 - [x] Bot is one-shot (run once, exit) — no daemon mode, no polling loop — Phase 2
 - [x] Contract upgradeable via UUPS proxy — Phase 1
 - [x] All three scenarios verifiable on Sepolia via getSummary() — Phase 3
+- [x] Bot uploads evidence to IPFS via Pinata; feedbackURI is `ipfs://CID` — Phase 6
+- [x] Prepare/execute split: all IPFS uploads complete before any tx submission; 3-consecutive upload failures escalate to systemic failure — Phase 6
+- [x] Per-item upload failure isolates to that item (skip + continue batch); PINATA_JWT absent skips Scenario 1/2 with warning and allows Scenario 3 revoke-only — Phase 6
 
 ### Active
 
@@ -32,9 +35,11 @@ Kleros-backed, economically-secured reputation signals for ERC-8004 AI agents �
 **Goal:** Make the bot production-ready with IPFS evidence, transaction safety, and structured logging.
 
 **Target features:**
-- IPFS evidence upload via Pinata — replace data: URI with IPFS CID for feedbackURI
+- ~~IPFS evidence upload via Pinata — replace data: URI with IPFS CID for feedbackURI~~ ✅ Phase 6 complete (2026-04-22)
 - ~~Transaction safety — gas retry, dropped receipt handling, balance preflight, SIGTERM graceful shutdown~~ ✅ Phase 5 complete (2026-04-21)
 - ~~Structured JSON logging — replace console.log with structured output for debugging and monitoring~~ ✅ Phase 4 complete (2026-03-30)
+
+**Milestone status:** All three target features delivered. v1.1 ready for milestone completion.
 
 ### Out of Scope
 
