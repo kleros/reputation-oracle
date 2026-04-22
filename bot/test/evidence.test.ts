@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { buildFeedbackURI, buildNegativeEvidence, buildPositiveEvidence } from "../src/evidence.js";
-import type { EvidenceJson } from "../src/types.js";
 
 const baseParams = {
 	agentId: 42n,
@@ -12,58 +11,16 @@ const baseParams = {
 };
 
 describe("buildFeedbackURI", () => {
-	it("produces data:application/json;base64,... string", () => {
-		const evidence: EvidenceJson = {
-			schema: "kleros-reputation-oracle/v1",
-			agentRegistry: "eip155:11155111:0x8004A818BFB912233c491871b3d84c89A494BD9e",
-			agentId: "42",
-			clientAddress: "eip155:11155111:0xRouter",
-			createdAt: "2026-03-26T00:00:00.000Z",
-			value: 95,
-			valueDecimals: 0,
-			tag1: "verified",
-			tag2: "kleros-agent-registry",
-			kleros: {
-				pgtcrAddress: "0x3162df9669affa8b6b6ff2147afa052249f00447",
-				pgtcrItemId: "0xitem",
-				stakeAmount: "0.002",
-				stakeToken: "WETH",
-				disputeId: null,
-				ruling: null,
-			},
-		};
-
-		const uri = buildFeedbackURI(evidence);
-		expect(uri).toMatch(/^data:application\/json;base64,/);
+	it("returns ipfs:// URI for a given CID", () => {
+		const uri = buildFeedbackURI("QmTestCID123");
+		expect(uri).toBe("ipfs://QmTestCID123");
 	});
 
-	it("base64-decodes to valid JSON matching the input", () => {
-		const evidence: EvidenceJson = {
-			schema: "kleros-reputation-oracle/v1",
-			agentRegistry: "eip155:11155111:0x8004A818BFB912233c491871b3d84c89A494BD9e",
-			agentId: "42",
-			clientAddress: "eip155:11155111:0xRouter",
-			createdAt: "2026-03-26T00:00:00.000Z",
-			value: 95,
-			valueDecimals: 0,
-			tag1: "verified",
-			tag2: "kleros-agent-registry",
-			kleros: {
-				pgtcrAddress: "0x3162",
-				pgtcrItemId: "0xitem",
-				stakeAmount: "0.002",
-				stakeToken: "WETH",
-				disputeId: null,
-				ruling: null,
-			},
-		};
-
-		const uri = buildFeedbackURI(evidence);
-		const base64 = uri.replace("data:application/json;base64,", "");
-		const decoded = JSON.parse(Buffer.from(base64, "base64").toString("utf-8"));
-		expect(decoded.schema).toBe("kleros-reputation-oracle/v1");
-		expect(decoded.agentId).toBe("42");
-		expect(decoded.tag1).toBe("verified");
+	it("returns ipfs:// URI with Qm-prefixed CID", () => {
+		const cid = "QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco";
+		const uri = buildFeedbackURI(cid);
+		expect(uri).toMatch(/^ipfs:\/\/Qm/);
+		expect(uri).toBe(`ipfs://${cid}`);
 	});
 });
 
