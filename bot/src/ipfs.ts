@@ -117,8 +117,13 @@ export async function uploadEvidenceToIPFS(
 			return result;
 		} catch (err) {
 			clearTimeout(timeoutId);
-			lastError = err;
+			// Classify the error — HTTP errors already have errorClass set; fetch errors need classification
 			const errorClass = (err as { errorClass?: PinataErrorClass }).errorClass ?? classifyFetchError(err);
+			// Augment error with errorClass if not already present (network/abort errors from fetch)
+			if (!(err as { errorClass?: PinataErrorClass }).errorClass) {
+				Object.assign(err as object, { errorClass });
+			}
+			lastError = err;
 
 			if (errorClass !== "server" && errorClass !== "rate-limit") {
 				throw err; // auth and network: no retry
