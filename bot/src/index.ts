@@ -121,6 +121,15 @@ async function main(): Promise<void> {
 			summary.systemicFailure = result.systemicFailure;
 		}
 
+		if (result.uploadsAttempted !== undefined) {
+			summary.uploadsAttempted = result.uploadsAttempted;
+			summary.uploadsSucceeded = result.uploadsSucceeded;
+			summary.uploadsFailed = result.uploadsFailed;
+		}
+		if (result.orphanedCids && result.orphanedCids.length > 0) {
+			summary.orphanedCids = result.orphanedCids;
+		}
+
 		if (!result.systemicFailure) {
 			logger.info({ txSent: result.txSent, skipped: result.skipped }, "Actions executed");
 		}
