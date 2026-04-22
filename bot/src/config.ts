@@ -14,6 +14,8 @@ export const configSchema = z.object({
 	LOG_LEVEL: z.string().optional().default("info"),
 	TX_RECEIPT_TIMEOUT_MS: z.coerce.number().int().positive().optional().default(120_000),
 	MIN_BALANCE_WEI: z.coerce.bigint().optional().default(5_000_000_000_000_000n),
+	PINATA_JWT: z.string().optional(),
+	PINATA_TIMEOUT_MS: z.coerce.number().int().positive().optional().default(30_000),
 });
 
 export type Config = z.infer<typeof configSchema>;
@@ -28,8 +30,8 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
 	const safeIssues = result.error.issues.map((issue) => ({
 		path: issue.path,
 		message: issue.message,
-		// Never log the actual private key value
-		...(issue.path.includes("BOT_PRIVATE_KEY") ? { received: "[REDACTED]" } : {}),
+		// Never log the actual private key or JWT value
+		...(issue.path.includes("BOT_PRIVATE_KEY") || issue.path.includes("PINATA_JWT") ? { received: "[REDACTED]" } : {}),
 	}));
 	logger.error({ issues: safeIssues }, "Config validation failed");
 	process.exit(1);
