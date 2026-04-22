@@ -70,7 +70,14 @@ Plans:
   3. When a single Pinata upload fails, that item is skipped and logged; the rest of the batch proceeds normally
   4. All IPFS uploads complete before any transaction is submitted (prepare/execute split)
   5. Running the bot without PINATA_JWT configured skips items that need evidence upload and logs a warning
-**Plans**: _(not yet planned)_
+**Plans**: 5 plans
+
+Plans:
+- [ ] 06-01-PLAN.md — config.ts: PINATA_JWT + PINATA_TIMEOUT_MS fields + redaction; types.ts: ExecuteActionsResult orphanedCids, RunSummary IPFS counters
+- [ ] 06-02-PLAN.md — bot/src/ipfs.ts: uploadEvidenceToIPFS with 4-class error handling + 1 retry; bot/test/ipfs.test.ts: D-34 unit matrix (10 cases)
+- [ ] 06-03-PLAN.md — bot/src/evidence.ts: buildFeedbackURI signature change to (cid: string) => ipfs://; bot/test/evidence.test.ts: updated assertions
+- [ ] 06-04-PLAN.md — bot/src/chain.ts: prepare/execute split with WR-01 invariant + 3-consecutive-failure escalation; bot/test/chain.test.ts: 6 new prepare/execute tests
+- [ ] 06-05-PLAN.md — bot/test/ipfs.integration.test.ts: gated real-Pinata test; bot/vitest.config.ts: unstubGlobals; bot/src/index.ts: IPFS run-summary wiring; bot/.env.example: new env vars
 
 ## Progress
 
@@ -82,7 +89,7 @@ Plans:
 | 1000. Upgrade bot deps | — | 2/2 | Complete | 2026-03-27 |
 | 4. Structured Logging | v1.1 | 2/2 | Complete | 2026-03-30 |
 | 5. Transaction Safety | v1.1 | 0/4 | Next | - |
-| 6. IPFS Evidence | v1.1 | 0/? | Not started | - |
+| 6. IPFS Evidence | v1.1 | 0/5 | Not started | - |
 
 ### Phase 1000: Upgrade bot dependencies to latest majors
 
