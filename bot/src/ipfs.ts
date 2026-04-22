@@ -59,6 +59,7 @@ export async function uploadEvidenceToIPFS(
 	timeoutMs: number,
 ): Promise<PinataUploadResult> {
 	let lastError: unknown;
+	const uploadStartMs = Date.now();
 
 	for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
 		const controller = new AbortController();
@@ -110,7 +111,7 @@ export async function uploadEvidenceToIPFS(
 
 			// D-31: success log with structured fields
 			log.info(
-				{ cid: result.cid, size: result.size, duration_ms: 0, gateway_url: result.gatewayUrl },
+				{ cid: result.cid, size: result.size, duration_ms: Date.now() - uploadStartMs, gateway_url: result.gatewayUrl },
 				"ipfs-upload-ok",
 			);
 
