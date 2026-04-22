@@ -12,12 +12,19 @@ import {
 import { privateKeyToAccount } from "viem/accounts";
 import { routerAbi } from "./abi/router.js";
 import type { Config } from "./config.js";
-import { buildNegativeEvidence, buildPositiveEvidence } from "./evidence.js";
+import { buildFeedbackURI, buildNegativeEvidence, buildPositiveEvidence } from "./evidence.js";
+import { uploadEvidenceToIPFS, type PinataMetadata } from "./ipfs.js";
 import { createChildLogger } from "./logger.js";
 import { estimateGasWithRetry, isRevertError } from "./tx.js";
-import { type Action, type ExecuteActionsResult, FeedbackType, type ShutdownHolder } from "./types.js";
+import { type Action, type EvidenceJson, type ExecuteActionsResult, FeedbackType, type ShutdownHolder } from "./types.js";
 
 const log = createChildLogger("chain");
+
+// Internal type for the prepare pass result — NOT exported
+type PreparedAction =
+	| { action: Action; status: "ready"; feedbackURI: string; evidence: EvidenceJson; cid: string }
+	| { action: Action; status: "skip"; reason: string }
+	| { action: Action; status: "no-ipfs" }; // Scenario 3: revokeOnly — no URI needed
 
 function buildChain(config: Config): Chain {
 	return {
@@ -101,9 +108,21 @@ export async function readRouterStates(
 
 /**
  * Execute actions sequentially with differentiated failure policy (D-01).
+ * Structured as a prepare pass (IPFS uploads) followed by an execute pass (on-chain txs).
+ *
+ * Prepare pass:
+ * - S1/S2: build evidence once (WR-01), upload to IPFS, produce PreparedAction { status: "ready" }
+ * - S3 (revokeOnly): no IPFS needed, produce PreparedAction { status: "no-ipfs" }
+ * - PINATA_JWT absent: S1/S2 get { status: "skip" }, S3 still proceeds
+ * - Upload failure: item skipped, consecutiveFailures++; 3 in a row → systemicFailure
+ * - Shutdown during prepare: return early, execute pass skipped
+ *
+ * Execute pass:
+ * - Skipped actions are not submitted
+ * - feedbackURI comes from PreparedAction (already ipfs://...) — NEVER rebuilt (WR-01)
  * - Item-specific failures (gas revert, submission revert, receipt revert, gas exhausted): skip + continue
  * - Systemic failures (receipt timeout, non-revert submission error): return systemicFailure reason
- * - Graceful shutdown: check shutdownHolder before each action; finish current tx if in-flight
+ *
  * Returns ExecuteActionsResult (never throws for classified errors).
  */
 export async function executeActions(
@@ -115,6 +134,11 @@ export async function executeActions(
 ): Promise<ExecuteActionsResult> {
 	let skipped = 0;
 	let txSent = 0;
+	let uploadsAttempted = 0;
+	let uploadsSucceeded = 0;
+	let uploadsFailed = 0;
+	let consecutiveFailures = 0;
+	const orphanedCids: string[] = [];
 
 	if (actions.length === 0) {
 		log.info("No actions to execute");
@@ -124,63 +148,172 @@ export async function executeActions(
 	const account = walletClient.account;
 	if (!account) throw new Error("WalletClient has no account");
 
-	// Fetch nonce once at start (D-09 — fetch once, increment locally)
-	let nonce = await publicClient.getTransactionCount({
-		address: account.address,
-	});
+	// === PREPARE PASS: upload evidence to IPFS for all S1/S2 actions ===
+	const prepared: PreparedAction[] = [];
 
-	for (const action of actions) {
-		// Check shutdown flag before starting each action (D-03/D-05)
+	for (let i = 0; i < actions.length; i++) {
+		const action = actions[i];
+
+		// Shutdown check before each upload (D-22)
 		if (shutdownHolder.shutdown) {
-			log.info("Shutdown requested, skipping remaining actions");
-			break;
+			log.info({ remainingActions: actions.length - i }, "Shutdown during prepare pass, skipping execute pass");
+			return {
+				skipped,
+				txSent,
+				uploadsAttempted,
+				uploadsSucceeded,
+				uploadsFailed,
+				orphanedCids: orphanedCids.length > 0 ? orphanedCids : undefined,
+			};
 		}
 
-		const agentIdStr = action.agentId.toString();
+		// Scenario 3 (revokeOnly): no IPFS needed (D-04)
+		if (action.type === "revokeOnly") {
+			prepared.push({ action, status: "no-ipfs" });
+			continue;
+		}
 
-		// Step 1: Gas estimation with retry (D-08/D-09/D-10)
-		// Build evidence and feedbackURI ONCE per action so gas estimate and writeContract
-		// use identical calldata (WR-01 — avoids createdAt timestamp drift between the two calls).
-		let gasEstimate: bigint;
-		let gasParams: EstimateContractGasParameters;
-		let feedbackURI: string | undefined;
+		// PINATA_JWT absent: skip S1/S2 actions (D-26, IPFS-05)
+		if (!config.PINATA_JWT) {
+			log.warn(
+				{ agentId: action.agentId.toString(), actionType: action.type, reason: "PINATA_JWT not configured" },
+				"Skipping action — PINATA_JWT not configured",
+			);
+			skipped++;
+			prepared.push({ action, status: "skip", reason: "PINATA_JWT not configured" });
+			continue;
+		}
 
+		// Build evidence once per action (WR-01 — captures createdAt here, NOT in execute pass)
+		const pgtcrItemId = action.type === "submitPositiveFeedback" ? action.pgtcrItemId : action.item.pgtcrItemId;
+		let evidence: EvidenceJson;
 		if (action.type === "submitPositiveFeedback") {
-			const evidence = buildPositiveEvidence({
+			evidence = buildPositiveEvidence({
 				agentId: action.agentId,
-				pgtcrItemId: action.pgtcrItemId,
+				pgtcrItemId,
 				pgtcrAddress: config.PGTCR_ADDRESS,
 				routerAddress: config.ROUTER_ADDRESS,
 				chainId: config.CHAIN_ID,
 				stake: action.item.stake,
 			});
-			// TODO(06-04): replace with CID from uploadEvidenceToIPFS() in the prepare pass.
-			// buildFeedbackURI now expects a CID string; interim: encode evidence as data URI here.
-			feedbackURI = `data:application/json;base64,${Buffer.from(JSON.stringify(evidence)).toString("base64")}`;
-			gasParams = {
-				address: config.ROUTER_ADDRESS as `0x${string}`,
-				abi: routerAbi,
-				functionName: "submitPositiveFeedback",
-				args: [action.agentId, action.pgtcrItemId as `0x${string}`, feedbackURI],
-				account,
-			};
-		} else if (action.type === "submitNegativeFeedback") {
-			const evidence = buildNegativeEvidence({
+		} else {
+			evidence = buildNegativeEvidence({
 				agentId: action.agentId,
-				pgtcrItemId: action.item.pgtcrItemId,
+				pgtcrItemId,
 				pgtcrAddress: config.PGTCR_ADDRESS,
 				routerAddress: config.ROUTER_ADDRESS,
 				chainId: config.CHAIN_ID,
 				stake: action.item.stake,
 				disputeId: action.item.disputeId,
 			});
-			// TODO(06-04): replace with CID from uploadEvidenceToIPFS() in the prepare pass.
-			feedbackURI = `data:application/json;base64,${Buffer.from(JSON.stringify(evidence)).toString("base64")}`;
+		}
+
+		// Build Pinata metadata (D-29)
+		const metadata: PinataMetadata = {
+			name: `kro-v1/${config.CHAIN_ID}/${action.agentId.toString()}/${pgtcrItemId}`,
+			keyvalues: {
+				agentId: action.agentId.toString(),
+				chainId: config.CHAIN_ID.toString(),
+				pgtcrItemId,
+				scenario: action.type === "submitPositiveFeedback" ? "verified" : "removed",
+			},
+		};
+
+		uploadsAttempted++;
+		try {
+			const uploadResult = await uploadEvidenceToIPFS(
+				evidence,
+				metadata,
+				config.PINATA_JWT,
+				config.PINATA_TIMEOUT_MS ?? 30_000,
+			);
+			uploadsSucceeded++;
+			consecutiveFailures = 0; // D-18: reset on success
+			orphanedCids.push(uploadResult.cid); // track for orphan reporting (removed on successful tx)
+			const feedbackURI = buildFeedbackURI(uploadResult.cid); // D-03: ipfs://<cid>
+			prepared.push({ action, status: "ready", feedbackURI, evidence, cid: uploadResult.cid });
+		} catch (err) {
+			uploadsFailed++;
+			consecutiveFailures++;
+			const errorClass = (err as { errorClass?: string }).errorClass ?? "network";
+			// D-32: retried=true only when failure was final after a 5xx/429 retry (server or rate-limit class).
+			// Auth and network errors are never retried — retried=false for those.
+			const retried = errorClass === "server" || errorClass === "rate-limit";
+			log.warn(
+				{
+					error_class: errorClass,
+					error_message: err instanceof Error ? err.message : String(err),
+					agentId: action.agentId.toString(),
+					pgtcrItemId,
+					scenario: action.type === "submitPositiveFeedback" ? "verified" : "removed",
+					actionIndex: i,
+					retried,
+				},
+				"ipfs-upload-failed",
+			);
+			skipped++;
+			prepared.push({ action, status: "skip", reason: "ipfs-upload-failed" });
+
+			// D-17: 3 consecutive failures → systemic stop
+			if (consecutiveFailures >= 3) {
+				log.error(
+					{ consecutiveFailures, reason: "pinata-unavailable" },
+					"Systemic failure: 3 consecutive Pinata upload failures",
+				);
+				return {
+					skipped,
+					txSent,
+					systemicFailure: "pinata-unavailable",
+					uploadsAttempted,
+					uploadsSucceeded,
+					uploadsFailed,
+					orphanedCids: orphanedCids.length > 0 ? orphanedCids : undefined,
+				};
+			}
+		}
+	}
+
+	log.info({ uploadsAttempted, uploadsSucceeded, uploadsFailed }, "Prepare pass complete");
+
+	// Fetch nonce once at start of execute pass (D-09 — fetch once, increment locally)
+	let nonce = await publicClient.getTransactionCount({
+		address: account.address,
+	});
+
+	// === EXECUTE PASS: submit on-chain transactions for all prepared actions ===
+	for (const prep of prepared) {
+		if (prep.status === "skip") continue; // already counted in skipped above
+
+		// Check shutdown flag before starting each action (D-03/D-05)
+		if (shutdownHolder.shutdown) {
+			log.info("Shutdown requested, skipping remaining actions");
+			break;
+		}
+
+		const action = prep.action;
+		const agentIdStr = action.agentId.toString();
+		// feedbackURI: from prepare pass (ipfs://...) or undefined for revokeOnly
+		const feedbackURI = prep.status === "ready" ? prep.feedbackURI : undefined;
+
+		// Step 1: Gas estimation with retry (D-08/D-09/D-10)
+		// feedbackURI was built once in the prepare pass (WR-01) — reuse here so calldata is identical.
+		let gasEstimate: bigint;
+		let gasParams: EstimateContractGasParameters;
+
+		if (action.type === "submitPositiveFeedback") {
+			gasParams = {
+				address: config.ROUTER_ADDRESS as `0x${string}`,
+				abi: routerAbi,
+				functionName: "submitPositiveFeedback",
+				args: [action.agentId, action.pgtcrItemId as `0x${string}`, feedbackURI as string],
+				account,
+			};
+		} else if (action.type === "submitNegativeFeedback") {
 			gasParams = {
 				address: config.ROUTER_ADDRESS as `0x${string}`,
 				abi: routerAbi,
 				functionName: "submitNegativeFeedback",
-				args: [action.agentId, feedbackURI],
+				args: [action.agentId, feedbackURI as string],
 				account,
 			};
 		} else {
@@ -214,7 +347,7 @@ export async function executeActions(
 		}
 
 		// Step 2: Submit transaction — NEVER retried (D-11)
-		// feedbackURI was built once above (WR-01) — reuse here so calldata is identical.
+		// feedbackURI was built once in the prepare pass (WR-01) — reuse here so calldata is identical.
 		let hash: `0x${string}`;
 
 		try {
@@ -268,7 +401,15 @@ export async function executeActions(
 				},
 				"Systemic failure: tx submission failed",
 			);
-			return { skipped, txSent, systemicFailure: "submission_failed_non_revert" };
+			return {
+				skipped,
+				txSent,
+				systemicFailure: "submission_failed_non_revert",
+				uploadsAttempted,
+				uploadsSucceeded,
+				uploadsFailed,
+				orphanedCids: orphanedCids.length > 0 ? orphanedCids : undefined,
+			};
 		}
 
 		// Step 3: Wait for receipt (D-12/D-13/D-15)
@@ -291,7 +432,12 @@ export async function executeActions(
 				continue;
 			}
 
-			// Success
+			// Success — remove CID from orphanedCids (it was successfully submitted on-chain)
+			if (prep.status === "ready") {
+				const cidIndex = orphanedCids.indexOf(prep.cid);
+				if (cidIndex !== -1) orphanedCids.splice(cidIndex, 1);
+			}
+
 			nonce++;
 			txSent++;
 			log.info({ txHash: hash, action: action.type, agentId: agentIdStr }, "TX confirmed");
@@ -308,16 +454,39 @@ export async function executeActions(
 					},
 					"Receipt timeout — tx may still be pending",
 				);
-				return { skipped, txSent, systemicFailure: "receipt_timeout" };
+				return {
+					skipped,
+					txSent,
+					systemicFailure: "receipt_timeout",
+					uploadsAttempted,
+					uploadsSucceeded,
+					uploadsFailed,
+					orphanedCids: orphanedCids.length > 0 ? orphanedCids : undefined,
+				};
 			}
 			// Unknown receipt error: systemic stop
 			log.error(
 				{ txHash: hash, action: action.type, agentId: agentIdStr, reason: "receipt_null" },
 				"Null or unexpected receipt error",
 			);
-			return { skipped, txSent, systemicFailure: "receipt_null" };
+			return {
+				skipped,
+				txSent,
+				systemicFailure: "receipt_null",
+				uploadsAttempted,
+				uploadsSucceeded,
+				uploadsFailed,
+				orphanedCids: orphanedCids.length > 0 ? orphanedCids : undefined,
+			};
 		}
 	}
 
-	return { skipped, txSent };
+	return {
+		skipped,
+		txSent,
+		uploadsAttempted,
+		uploadsSucceeded,
+		uploadsFailed,
+		orphanedCids: orphanedCids.length > 0 ? orphanedCids : undefined,
+	};
 }
