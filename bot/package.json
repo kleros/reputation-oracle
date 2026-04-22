@@ -9,6 +9,7 @@
 		"start:dry-run": "node --env-file=.env --import tsx src/index.ts --dry-run",
 		"typecheck": "tsc --noEmit",
 		"test": "vitest run",
+		"test:pinata": "set -a && source .env && set +a && npx vitest run test/ipfs.integration.test.ts",
 		"test:watch": "vitest",
 		"lint": "biome check .",
 		"lint:fix": "biome check --write ."
