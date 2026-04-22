@@ -69,13 +69,12 @@ export function buildNegativeEvidence(params: NegativeEvidenceParams): EvidenceJ
 }
 
 /**
- * Build a data: URI from evidence JSON (base64-encoded).
- * Returns "data:application/json;base64,<base64>"
+ * Build an ipfs:// URI from a Pinata CID.
+ * The CID comes from uploadEvidenceToIPFS() in ipfs.ts.
+ * D-03: feedbackURI written to chain is ipfs://<CID>; Kleros CDN URL used in logs only.
  */
-export function buildFeedbackURI(evidence: EvidenceJson): string {
-	const json = JSON.stringify(evidence);
-	const base64 = Buffer.from(json).toString("base64");
-	return `data:application/json;base64,${base64}`;
+export function buildFeedbackURI(cid: string): string {
+	return `ipfs://${cid}`;
 }
 
 /**
