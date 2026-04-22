@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Production Hardening
-status: executing
-stopped_at: Phase 6 context gathered
-last_updated: "2026-04-22T12:59:14.320Z"
-last_activity: 2026-04-22
+status: shipped
+stopped_at: v1.1 shipped — awaiting v1.2 scope definition
+last_updated: "2026-04-22T23:59:00.000Z"
+last_activity: 2026-04-22 -- v1.1 Production Hardening milestone shipped
 progress:
   total_phases: 4
   completed_phases: 4
@@ -18,73 +18,62 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-30)
+See: .planning/PROJECT.md (updated 2026-04-22 after v1.1 milestone)
 
 **Core value:** Kleros-backed, economically-secured reputation signals for ERC-8004 AI agents
-**Current focus:** Phase 06 — ipfs-evidence
+**Current focus:** Planning next milestone — v1.2 scope not yet defined
 
 ## Current Position
 
-Phase: 1000
-Plan: Not started
-Status: Executing Phase 06
-Last activity: 2026-04-22
+Milestone: v1.1 — SHIPPED 2026-04-22
+Next: awaiting `/gsd:new-milestone` to define v1.2
+Status: Ready for next milestone
+Last activity: 2026-04-22 -- v1.1 Production Hardening milestone shipped
 
-Progress: [██████░░░░░░░░░░░░░░] 33%
+Progress: [████████████████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 11 (v1.1)
-- Average duration: 2min
-- Total execution time: ~4min
+- Total plans completed: 11 (v1.1) + 2 (Phase 1000 orphan) = 13
+- v1.1 timeline: 2026-03-30 → 2026-04-22 (24 days)
+- Phase 6 execution: ~3 hours wall-clock (parallel worktree waves)
 
-**By Phase:**
+**By Phase (v1.1):**
 
-| Phase | Plans | Total | Avg/Plan |
-|-------|-------|-------|----------|
-| 04-structured-logging | 2 | ~4min | ~2min |
-| 05 | 4 | - | - |
-| 06 | 5 | - | - |
-
-**Recent Trend (from v1.0):**
-
-| Phase | Duration | Tasks | Files |
-|-------|----------|-------|-------|
-| Phase 01 P02 | 4min | 2 tasks | 1 files |
-| Phase 02 P01 | 5min | 3 tasks | 12 files |
-| Phase 02 P03 | 4min | 2 tasks | 2 files |
-| Phase 02 P04 | 3min | 1 tasks | 1 files |
-| Phase 03 P01 | 2min | 1 tasks | 1 files |
-| Phase 03 P02 | 30min | 3 tasks | 1 files |
-| Phase 1000 P01 | 2min | 2 tasks | 2 files |
-| Phase 1000 P02 | 2min | 2 tasks | 6 files |
-| Phase 04-structured-logging P01 | 1min | 2 tasks | 4 files |
-| Phase 04-structured-logging P02 | 3min | 2 tasks | 5 files |
+| Phase | Plans | Completed |
+|-------|-------|-----------|
+| 04-structured-logging | 2 | 2026-03-30 |
+| 05-transaction-safety | 4 | 2026-04-21 |
+| 06-ipfs-evidence | 5 | 2026-04-22 |
 
 ## Accumulated Context
 
 ### Decisions
 
-Decisions are logged in PROJECT.md Key Decisions table.
-Recent decisions affecting current work:
+All v1.1 decisions logged in PROJECT.md Key Decisions table. Archive in `.planning/milestones/v1.1-ROADMAP.md`.
 
-- [Roadmap v1.1]: 3 coarse phases — Logging first (foundation), Tx Safety second (existing gaps), IPFS last (most complex, depends on logger)
-- [Roadmap v1.1]: Integration testing folded into each phase (coarse granularity) rather than separate phase
-- [Research]: pino chosen over custom logger — redaction and child loggers justify the dependency
-- [Research]: Prepare/execute split for IPFS — upload all CIDs before submitting any transactions
-- [Phase 04-structured-logging]: Pino logger writes to stderr via fd 2, custom error serializer sanitizes nested secrets
-- [Phase 04-structured-logging]: Dry-run JSON output on stdout via process.stdout.write; all pino logs on stderr
+### Deferred Items
+
+Items acknowledged and deferred at v1.1 milestone close on 2026-04-22:
+
+| Category | Item | Status |
+|----------|------|--------|
+| security | 06-SECURITY.md threat-mitigation audit | Not run — security_enforcement=true gate bypassed |
+| audit | v1.1-MILESTONE-AUDIT.md | Not run before close |
+| code-review | IN-01 dead `?? 30_000` fallback in chain.ts | Advisory only, no runtime impact |
+| code-review | IN-02 `parseInt(disputeId)` precision loss above 2^53 | Theoretical — Kleros dispute counts far below this |
+| requirement | PROD-02 monitoring integration | Deferred from v1.1 scope |
+| requirement | PROD-03 key rotation + Pausable contract upgrade | Contract-level, future milestone |
 
 ### Pending Todos
 
-None yet.
+None.
 
 ### Blockers/Concerns
 
-- [Research]: Pinata rate limit behavior on specific plan tier — validate during Phase 6 planning
-- [Research]: Prepare/execute split granularity — should revoke-only actions (no evidence) execute immediately?
+None at milestone close.
 
 ### Quick Tasks Completed
 
@@ -94,6 +83,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-22T00:59:30.591Z
-Stopped at: Phase 6 context gathered
-Resume file: .planning/phases/06-ipfs-evidence/06-CONTEXT.md
+Last session: 2026-04-22 — v1.1 milestone close
+Stopped at: v1.1 shipped
+Resume hint: `/gsd:new-milestone` to define v1.2 scope; or `/gsd:progress` to review shipped state.
