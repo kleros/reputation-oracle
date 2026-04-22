@@ -70,6 +70,10 @@ export interface RunSummary {
 	durationMs: number;
 	skipped: number; // count of item-specific skips during this run (D-20)
 	systemicFailure?: string; // reason from D-19 taxonomy; absent on success (D-20)
+	uploadsAttempted?: number; // absent when PINATA_JWT not configured (D-33)
+	uploadsSucceeded?: number;
+	uploadsFailed?: number;
+	orphanedCids?: string[]; // CIDs uploaded but not submitted due to shutdown or systemic failure (D-24)
 }
 
 /** Return type of executeActions() — replaces Promise<void> (D-20). */
@@ -77,6 +81,10 @@ export interface ExecuteActionsResult {
 	skipped: number;
 	txSent: number;
 	systemicFailure?: string; // reason code from D-19 taxonomy; absent on success
+	orphanedCids?: string[]; // CIDs uploaded but not submitted due to shutdown or systemic failure (D-24)
+	uploadsAttempted?: number; // absent when PINATA_JWT not configured (D-33)
+	uploadsSucceeded?: number;
+	uploadsFailed?: number;
 }
 
 /** Mutable object threaded from index.ts into executeActions() to propagate SIGTERM/SIGINT (D-05). */

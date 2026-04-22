@@ -12,7 +12,7 @@ import {
 import { privateKeyToAccount } from "viem/accounts";
 import { routerAbi } from "./abi/router.js";
 import type { Config } from "./config.js";
-import { buildFeedbackURI, buildNegativeEvidence, buildPositiveEvidence } from "./evidence.js";
+import { buildNegativeEvidence, buildPositiveEvidence } from "./evidence.js";
 import { createChildLogger } from "./logger.js";
 import { estimateGasWithRetry, isRevertError } from "./tx.js";
 import { type Action, type ExecuteActionsResult, FeedbackType, type ShutdownHolder } from "./types.js";
@@ -154,7 +154,9 @@ export async function executeActions(
 				chainId: config.CHAIN_ID,
 				stake: action.item.stake,
 			});
-			feedbackURI = buildFeedbackURI(evidence);
+			// TODO(06-04): replace with CID from uploadEvidenceToIPFS() in the prepare pass.
+			// buildFeedbackURI now expects a CID string; interim: encode evidence as data URI here.
+			feedbackURI = `data:application/json;base64,${Buffer.from(JSON.stringify(evidence)).toString("base64")}`;
 			gasParams = {
 				address: config.ROUTER_ADDRESS as `0x${string}`,
 				abi: routerAbi,
@@ -172,7 +174,8 @@ export async function executeActions(
 				stake: action.item.stake,
 				disputeId: action.item.disputeId,
 			});
-			feedbackURI = buildFeedbackURI(evidence);
+			// TODO(06-04): replace with CID from uploadEvidenceToIPFS() in the prepare pass.
+			feedbackURI = `data:application/json;base64,${Buffer.from(JSON.stringify(evidence)).toString("base64")}`;
 			gasParams = {
 				address: config.ROUTER_ADDRESS as `0x${string}`,
 				abi: routerAbi,
