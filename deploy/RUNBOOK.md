@@ -308,13 +308,13 @@ Create an alert in Betterstack Telemetry to detect silent list-misconfiguration 
    ```sql
    SELECT {{time}} AS time, count() AS value
    FROM {{source}}
-   WHERE `summary.itemsFetched` = 0
+   WHERE JSONExtract(raw, 'summary', 'itemsFetched', 'Nullable(Int64)') = 0
      AND dt BETWEEN {{start_time}} AND {{end_time}}
    GROUP BY time
    ORDER BY time
    ```
    `{{source}}` expands to the selected source's table; `{{start_time}}`/`{{end_time}}` bind to the alert's time window; `{{time}}` is a bucketing expression (use in `SELECT`/`GROUP BY` only — it errors in `WHERE` with `Illegal type (DateTime('UTC')) ... toStartOfInterval`).
-   > **Note:** Betterstack auto-flattens nested pino fields into dotted top-level columns — `summary.itemsFetched` is queryable as a native numeric column (backticks required; dot is a name separator). Do NOT use `JSONExtract(raw, 'summary.itemsFetched', ...)` — ClickHouse treats each path arg as a single key, so the dotted string matches nothing (nested form would be `JSONExtract(raw, 'summary', 'itemsFetched', 'Nullable(Int64)')`, but the flattened column is cleaner and faster).
+   > **Note on path syntax:** `JSONExtract` takes one arg per nesting level, NOT a dotted path — `'summary', 'itemsFetched'` (two args) walks into the nested object; `'summary.itemsFetched'` (one arg) looks for a literal top-level key with a dot in its name and matches nothing. The Betterstack UI sidebar shows `summary.itemsFetched` as if it were a column, but it's a UI-level virtual field — the underlying S3 table only exposes `raw`/`json`/`dt` etc., so backticked column access (`` `summary.itemsFetched` ``) errors with `UNKNOWN_IDENTIFIER`.
 4. Chart panel (Visualization → Data tab):
    - X-axis column: `time`
    - X-axis type: `Time series`
