@@ -4,7 +4,7 @@
 
 - ✅ **v1.0 Kleros Reputation Oracle** — Phases 1-3 (shipped 2026-03-27)
 - ✅ **v1.1 Production Hardening** — Phases 4-6 (shipped 2026-04-22)
-- 📋 **v1.2 — TBD** (next)
+- 🚧 **v1.2 Deploy-to-Mainnet** — Phases 7-9 (in progress)
 
 ## Phases
 
@@ -40,9 +40,49 @@ Standalone dependency-maintenance phase, not tied to a milestone. Completed betw
 
 </details>
 
-### 📋 v1.2 — TBD (Planned)
+### 🚧 v1.2 — Deploy-to-Mainnet (Phases 7-9)
 
-Next milestone scope not yet defined. Run `/gsd:new-milestone` to start questioning → research → requirements → roadmap.
+- [ ] **Phase 7: Packaging** — systemd runtime, idempotent bootstrap, tsx devDep fix, Sepolia VPS acceptance
+- [ ] **Phase 8: Observability** — Betterstack Telemetry + Uptime, runId/chainId, closeLogger, 7-day burn-in gate
+- [ ] **Phase 9: Mainnet Cutover** — Router deploy on Mainnet, Identity registration, Mainnet systemd unit, go-live
+
+## Phase Details
+
+### Phase 7: Packaging
+**Goal**: Bot runs reliably on a fresh Ubuntu 24.04 VPS via a single idempotent bootstrap script with systemd scheduling and hardened secrets handling
+**Depends on**: Nothing (builds on shipped v1.1 bot code; no bot logic changes)
+**Requirements**: PKG-01, PKG-02, PKG-03, PKG-04, PKG-05, PKG-06, PKG-07, PKG-08
+**Success Criteria** (what must be TRUE):
+  1. Fresh VPS → running bot in ≤ 10 minutes: `bootstrap.sh` completes idempotently and `--dry-run` emits a valid `RunSummary`
+  2. `npm ci --omit=dev` does not break execution — `tsx` is a production dependency and `node --import tsx src/index.ts` starts cleanly
+  3. systemd timer fires on schedule; run output is visible in `journalctl -u reputation-oracle@sepolia`
+  4. `systemctl show reputation-oracle@sepolia` does not expose secret values — all secrets are in `/etc/reputation-oracle/sepolia.env` at mode 0600
+  5. journald retention is capped (`SystemMaxUse=500M`) — verified via `journalctl --disk-usage`
+**Plans**: TBD
+
+### Phase 8: Observability
+**Goal**: Every Sepolia run is observable in Betterstack with structured log search by runId/chainId, and a heartbeat confirms liveness after each successful run
+**Depends on**: Phase 7 (systemd EnvironmentFile must exist to hold Betterstack tokens; runtime established)
+**Requirements**: OBS-01, OBS-02, OBS-03, OBS-04, OBS-05, OBS-06, OBS-07, OBS-08
+**Success Criteria** (what must be TRUE):
+  1. Betterstack Telemetry shows a live log stream; filtering by `runId` or `chainId` returns exactly the lines from that run
+  2. Uptime heartbeat appears in Betterstack after every successful Sepolia run; alert fires when timer window is missed (grace = 20 min)
+  3. Heartbeat reflects true exit code — systemic failure sends `/fail` variant; heartbeat failure never cascades to bot exit status
+  4. `--dry-run` invocations do not forward logs to Betterstack (transport disabled when token absent or dry-run flag set)
+  5. 7-day Sepolia burn-in shows 7+ consecutive successful heartbeats with `runId`/`chainId` present in every log line — gate documented before Phase 9 begins
+**Plans**: TBD
+
+### Phase 9: Mainnet Cutover
+**Goal**: Router UUPS proxy is live on Ethereum Mainnet with a dedicated systemd instance, and the first real Mainnet feedback transaction is verified on Etherscan
+**Depends on**: Phase 8 (7-day Sepolia burn-in gate; structured logs required for Mainnet incident MTTR)
+**Requirements**: MAIN-01, MAIN-02, MAIN-03, MAIN-04, MAIN-05, MAIN-06, MAIN-07, MAIN-08, MAIN-09
+**Success Criteria** (what must be TRUE):
+  1. `Deploy.s.sol` passes against forked Mainnet state (`forge script --fork-url $MAINNET_RPC_URL`) with correct ERC-8004 registry addresses asserted
+  2. Router UUPS proxy deployed on Ethereum Mainnet; `cast call $ROUTER_PROXY "reputationRegistry()(address)"` returns expected Mainnet registry address
+  3. Mainnet signer is a fresh keypair never shared with Sepolia; `mainnet.env` is a separate file at mode 0600
+  4. Mandatory dry-run on Mainnet fork passes inspection before first live run; first live tx verified on Etherscan against dry-run output
+  5. Mainnet systemd timer active; Betterstack Uptime monitor and alert configured for Mainnet heartbeat; `viem fallbackTransport` wired with primary + fallback RPC
+**Plans**: TBD
 
 ## Progress
 
@@ -55,6 +95,9 @@ Next milestone scope not yet defined. Run `/gsd:new-milestone` to start question
 | 4. Structured Logging | v1.1 | 2/2 | Complete | 2026-03-30 |
 | 5. Transaction Safety | v1.1 | 4/4 | Complete | 2026-04-21 |
 | 6. IPFS Evidence | v1.1 | 5/5 | Complete | 2026-04-22 |
+| 7. Packaging | v1.2 | 0/? | Not started | - |
+| 8. Observability | v1.2 | 0/? | Not started | - |
+| 9. Mainnet Cutover | v1.2 | 0/? | Not started | - |
 
 ## Backlog
 
