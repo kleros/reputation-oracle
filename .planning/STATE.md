@@ -1,36 +1,37 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.1
-milestone_name: Production Hardening
-status: shipped
-stopped_at: v1.1 shipped — awaiting v1.2 scope definition
-last_updated: "2026-04-22T23:59:00.000Z"
-last_activity: 2026-04-22 -- v1.1 Production Hardening milestone shipped
+milestone: v1.2
+milestone_name: Deploy-to-Mainnet
+status: Defining requirements
+stopped_at: v1.2 scope confirmed — spawning research
+last_updated: "2026-04-23T01:00:00.000Z"
+last_activity: 2026-04-23 -- v1.2 milestone kickoff; user confirmed 3-phase plan (Packaging → Observability → Mainnet)
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 13
-  completed_plans: 13
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-22 after v1.1 milestone)
+See: .planning/PROJECT.md (updated 2026-04-23 after v1.2 milestone kickoff)
 
 **Core value:** Kleros-backed, economically-secured reputation signals for ERC-8004 AI agents
-**Current focus:** Planning next milestone — v1.2 scope not yet defined
+**Current focus:** Milestone v1.2 Deploy-to-Mainnet — defining requirements after scope confirmation
 
 ## Current Position
 
-Milestone: v1.1 — SHIPPED 2026-04-22
-Next: awaiting `/gsd:new-milestone` to define v1.2
-Status: Ready for next milestone
-Last activity: 2026-04-23 - Completed quick task 260423-2ev: fix IN-01 dead fallback in chain.ts
+Milestone: v1.2 — Deploy-to-Mainnet (kicked off 2026-04-23)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-04-23 — v1.2 milestone started; 3-phase plan confirmed (Packaging → Observability → Mainnet)
 
-Progress: [████████████████████] 100%
+Progress: [░░░░░░░░░░░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
@@ -85,6 +86,6 @@ None at milestone close.
 
 ## Session Continuity
 
-Last session: 2026-04-22 — v1.1 milestone close
-Stopped at: v1.1 shipped
-Resume hint: `/gsd:new-milestone` to define v1.2 scope; or `/gsd:progress` to review shipped state.
+Last session: 2026-04-23 — v1.2 milestone kickoff
+Stopped at: Scope confirmed, spawning research (Betterstack-focused)
+Resume hint: `/gsd:next` to continue; or `/gsd:plan-phase 7` once roadmap is written.

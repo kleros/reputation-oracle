@@ -30,16 +30,14 @@ Kleros-backed, economically-secured reputation signals for ERC-8004 AI agents �
 
 ### Active
 
-#### Current Milestone: v1.1 Production Hardening
+#### Current Milestone: v1.2 Deploy-to-Mainnet
 
-**Goal:** Make the bot production-ready with IPFS evidence, transaction safety, and structured logging.
+**Goal:** Package the toolchain for VPS operation on Sepolia, wire observability via Betterstack, then extend the stack to Ethereum Mainnet.
 
 **Target features:**
-- ~~IPFS evidence upload via Pinata — replace data: URI with IPFS CID for feedbackURI~~ ✅ Phase 6 complete (2026-04-22)
-- ~~Transaction safety — gas retry, dropped receipt handling, balance preflight, SIGTERM graceful shutdown~~ ✅ Phase 5 complete (2026-04-21)
-- ~~Structured JSON logging — replace console.log with structured output for debugging and monitoring~~ ✅ Phase 4 complete (2026-03-30)
-
-**Milestone status:** All three target features delivered. v1.1 ready for milestone completion.
+- **Packaging & Sepolia VPS deployment** — bare Node 22 LTS + systemd timer on headless Ubuntu; `EnvironmentFile`-based secrets (mode 0600); `journalctl` captures pino NDJSON; bootstrap/runbook reproducible from a fresh VPS
+- **Observability** — Betterstack Telemetry log forwarding (pino → Betterstack) + Betterstack Uptime heartbeat/ping on successful runs; alerts on systemic failure or missed timer window (PROD-02)
+- **Ethereum Mainnet support** — Router UUPS deployment on Mainnet; Kleros 8004 Identity Mainnet registration; config and runbook updates for Mainnet PGTCR Verified Agents list (list deployment coordinated externally)
 
 ### Out of Scope
 
@@ -51,6 +49,11 @@ Kleros-backed, economically-secured reputation signals for ERC-8004 AI agents �
 - Multi-list support in v1 — single PGTCR list per Router deployment; contract upgradeable for future
 - Curate v2 / Kleros v2 support — using v1 for now; architecture supports future migration
 - Re-registration revocation — history accumulates; agent removed then re-accepted shows mixed record
+- v1.2 excludes Pausable Router upgrade (PROD-03) — deferred to v1.3; current hardening deemed sufficient for mainnet by user
+- v1.2 excludes key rotation runbook (PROD-03) — deferred to v1.3
+- v1.2 excludes evidence-text enrichment — handled as a `/gsd:quick` task outside the milestone
+- v1.2 excludes Mainnet PGTCR list deployment — coordinated externally; milestone assumes the list exists by cutover
+- v1.2 excludes container-based packaging (Docker/Compose) — bare Node + systemd timer chosen for one-shot bot simplicity
 
 ## Context
 
@@ -108,4 +111,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-21 after Phase 5 (Transaction Safety) complete*
+*Last updated: 2026-04-23 after v1.2 milestone kickoff (Deploy-to-Mainnet)*
