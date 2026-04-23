@@ -74,11 +74,19 @@ Plans:
 **Requirements**: OBS-01, OBS-02, OBS-03, OBS-04, OBS-05, OBS-06, OBS-07, OBS-08
 **Success Criteria** (what must be TRUE):
   1. Betterstack Telemetry shows a live log stream; filtering by `runId` or `chainId` returns exactly the lines from that run
-  2. Uptime heartbeat appears in Betterstack after every successful Sepolia run; alert fires when timer window is missed (grace = 20 min)
+  2. Uptime heartbeat appears in Betterstack after every successful Sepolia run; alert fires when timer window is missed (grace = 10 min at 5-min cadence, revised 2026-04-23 from 20 min)
   3. Heartbeat reflects true exit code — systemic failure sends `/fail` variant; heartbeat failure never cascades to bot exit status
   4. `--dry-run` invocations do not forward logs to Betterstack (transport disabled when token absent or dry-run flag set)
   5. 7-day Sepolia burn-in shows 7+ consecutive successful heartbeats with `runId`/`chainId` present in every log line — gate documented before Phase 9 begins
-**Plans**: TBD
+**Plans**: 6 plans
+
+Plans:
+- [ ] 08-01-PLAN.md — config.ts: 3 new Betterstack zod fields (BETTERSTACK_SOURCE_TOKEN, BETTERSTACK_HEARTBEAT_URL, HEARTBEAT_TIMEOUT_MS)
+- [ ] 08-02-PLAN.md — types.ts: RunSummary.items → itemsFetched rename + index.ts call sites
+- [ ] 08-03-PLAN.md — logger.ts: pino multi-transport + @logtail/pino + closeLogger + heartbeat URL redaction
+- [ ] 08-04-PLAN.md — heartbeat.ts (NEW): sendHeartbeat with AbortSignal.timeout + /fail routing + 7 unit tests
+- [ ] 08-05-PLAN.md — index.ts: runId generation, child logger binding, sendHeartbeat wiring, closeLogger swap
+- [ ] 08-06-PLAN.md — deploy/bootstrap.sh typo fix + deploy/RUNBOOK.md §9 Betterstack Setup + §10 Burn-in Gate
 
 ### Phase 9: Mainnet Cutover
 **Goal**: Router UUPS proxy is live on Ethereum Mainnet with a dedicated systemd instance, and the first real Mainnet feedback transaction is verified on Etherscan
@@ -104,7 +112,7 @@ Plans:
 | 5. Transaction Safety | v1.1 | 4/4 | Complete | 2026-04-21 |
 | 6. IPFS Evidence | v1.1 | 5/5 | Complete | 2026-04-22 |
 | 7. Packaging | v1.2 | 6/6 | Complete   | 2026-04-23 |
-| 8. Observability | v1.2 | 0/? | Not started | - |
+| 8. Observability | v1.2 | 0/6 | Planned | - |
 | 9. Mainnet Cutover | v1.2 | 0/? | Not started | - |
 
 ## Backlog

@@ -4,8 +4,8 @@ milestone: v1.2
 milestone_name: Deploy-to-Mainnet
 status: executing
 stopped_at: Phase 08 context gathered non-interactively (Telegram MCP disconnect); 3 DISC items flagged for user review before plan-phase
-last_updated: "2026-04-23T20:13:21.920Z"
-last_activity: 2026-04-23 -- Phase 8 planning complete
+last_updated: "2026-04-23T21:34:49.089Z"
+last_activity: 2026-04-23 -- Phase 08 execution started
 progress:
   total_phases: 3
   completed_phases: 1
@@ -21,15 +21,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-23 after v1.2 milestone kickoff)
 
 **Core value:** Kleros-backed, economically-secured reputation signals for ERC-8004 AI agents
-**Current focus:** Phase 07 — packaging
+**Current focus:** Phase 08 — observability
 
 ## Current Position
 
 Milestone: v1.2 — Deploy-to-Mainnet
-Phase: 07 (packaging) — COMPLETE (live-VPS UAT deferred)
-Plan: 6 of 6
-Status: Ready to execute
-Last activity: 2026-04-23 -- Phase 8 planning complete
+Phase: 08 (observability) — EXECUTING
+Plan: 1 of 6
+Status: Executing Phase 08
+Last activity: 2026-04-23 -- Phase 08 execution started
 
 Progress: [████████████████████] 100% (code) · deferred (live-VPS UAT)
 
