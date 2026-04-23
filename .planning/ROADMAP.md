@@ -42,7 +42,7 @@ Standalone dependency-maintenance phase, not tied to a milestone. Completed betw
 
 ### 🚧 v1.2 — Deploy-to-Mainnet (Phases 7-9)
 
-- [ ] **Phase 7: Packaging** — systemd runtime, idempotent bootstrap, tsx devDep fix, Sepolia VPS acceptance
+- [x] **Phase 7: Packaging** — systemd runtime, idempotent bootstrap, tsx devDep fix, Sepolia VPS acceptance (completed 2026-04-23)
 - [ ] **Phase 8: Observability** — Betterstack Telemetry + Uptime, runId/chainId, closeLogger, 7-day burn-in gate
 - [ ] **Phase 9: Mainnet Cutover** — Router deploy on Mainnet, Identity registration, Mainnet systemd unit, go-live
 
@@ -66,7 +66,7 @@ Plans:
 - [x] 07-03-PLAN.md — deploy/bootstrap.sh (11-step idempotent VPS provisioner)
 - [x] 07-04-PLAN.md — deploy/update.sh (atomic 4-step update) + deploy/start-timer.sh
 - [x] 07-05-PLAN.md — deploy/RUNBOOK.md (operator lifecycle guide) + README.md pointer
-- [ ] 07-06-PLAN.md — deploy/ACCEPTANCE.md (PKG-01..PKG-08 VPS acceptance checklist)
+- [x] 07-06-PLAN.md — deploy/ACCEPTANCE.md (PKG-01..PKG-08 VPS acceptance checklist)
 
 ### Phase 8: Observability
 **Goal**: Every Sepolia run is observable in Betterstack with structured log search by runId/chainId, and a heartbeat confirms liveness after each successful run
@@ -103,7 +103,7 @@ Plans:
 | 4. Structured Logging | v1.1 | 2/2 | Complete | 2026-03-30 |
 | 5. Transaction Safety | v1.1 | 4/4 | Complete | 2026-04-21 |
 | 6. IPFS Evidence | v1.1 | 5/5 | Complete | 2026-04-22 |
-| 7. Packaging | v1.2 | 5/6 | In Progress|  |
+| 7. Packaging | v1.2 | 6/6 | Complete   | 2026-04-23 |
 | 8. Observability | v1.2 | 0/? | Not started | - |
 | 9. Mainnet Cutover | v1.2 | 0/? | Not started | - |
 

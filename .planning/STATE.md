@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Deploy-to-Mainnet
-status: executing
-stopped_at: Completed 07-05-PLAN.md
-last_updated: "2026-04-23T17:02:24.888Z"
+status: verifying
+stopped_at: "Completed 07-06-PLAN.md (checkpoint:human-verify pending)"
+last_updated: "2026-04-23T17:06:19.023Z"
 last_activity: 2026-04-23
 progress:
   total_phases: 3
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 6
-  completed_plans: 5
-  percent: 83
+  completed_plans: 6
+  percent: 100
 ---
 
 # Project State
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-04-23 after v1.2 milestone kickoff)
 Milestone: v1.2 — Deploy-to-Mainnet
 Phase: 07 (packaging) — EXECUTING
 Plan: 6 of 6
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-23
 
 Progress: [░░░░░░░░░░░░░░░░░░░░] 0%
@@ -53,6 +53,7 @@ Progress: [░░░░░░░░░░░░░░░░░░░░] 0%
 | Phase 07-packaging P03 | 2min | 1 tasks | 1 files |
 | Phase 07-packaging P04 | 48s | 2 tasks | 2 files |
 | Phase 07-packaging P05 | 2min | 2 tasks | 2 files |
+| Phase 07-packaging P06 | 2min | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -80,6 +81,8 @@ All v1.1 decisions logged in PROJECT.md Key Decisions table. Archive in `.planni
 - [Phase 07-packaging]: start-timer.sh uses instance-arg form (not Sepolia-hardcoded) — Phase 9 Mainnet reuse with zero changes
 - [Phase 07-packaging]: Single RUNBOOK.md file (not split per D-39) — one document operator can bookmark during incidents
 - [Phase 07-packaging]: Dry-run command inline in RUNBOOK.md (no separate verify.sh wrapper) — D-29 pattern, simpler for operators
+- [Phase 07-packaging]: Acceptance checklist maps 1:1 to PKG-01..PKG-08 with exact shell commands and expected output patterns — not vague prose
+- [Phase 07-packaging]: Dry-run command in PKG-08 uses --preserve-env=HOME + grep filters matching RUNBOOK.md §3 exactly
 
 ### Deferred Items
 
@@ -118,6 +121,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-23T17:02:24.885Z
-Stopped at: Completed 07-05-PLAN.md
+Last session: 2026-04-23T17:06:19.019Z
+Stopped at: Completed 07-06-PLAN.md (checkpoint:human-verify pending)
 Resume hint: `/gsd:plan-phase 7` to start packaging plans
