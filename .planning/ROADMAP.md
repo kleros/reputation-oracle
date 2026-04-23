@@ -81,8 +81,8 @@ Plans:
 **Plans**: 6 plans
 
 Plans:
-- [ ] 08-01-PLAN.md — config.ts: 3 new Betterstack zod fields (BETTERSTACK_SOURCE_TOKEN, BETTERSTACK_HEARTBEAT_URL, HEARTBEAT_TIMEOUT_MS)
-- [ ] 08-02-PLAN.md — types.ts: RunSummary.items → itemsFetched rename + index.ts call sites
+- [x] 08-01-PLAN.md — config.ts: 3 new Betterstack zod fields (BETTERSTACK_SOURCE_TOKEN, BETTERSTACK_HEARTBEAT_URL, HEARTBEAT_TIMEOUT_MS)
+- [x] 08-02-PLAN.md — types.ts: RunSummary.items → itemsFetched rename + index.ts call sites
 - [ ] 08-03-PLAN.md — logger.ts: pino multi-transport + @logtail/pino + closeLogger + heartbeat URL redaction
 - [ ] 08-04-PLAN.md — heartbeat.ts (NEW): sendHeartbeat with AbortSignal.timeout + /fail routing + 7 unit tests
 - [ ] 08-05-PLAN.md — index.ts: runId generation, child logger binding, sendHeartbeat wiring, closeLogger swap
