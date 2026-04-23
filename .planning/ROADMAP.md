@@ -58,7 +58,15 @@ Standalone dependency-maintenance phase, not tied to a milestone. Completed betw
   3. systemd timer fires on schedule; run output is visible in `journalctl -u reputation-oracle@sepolia`
   4. `systemctl show reputation-oracle@sepolia` does not expose secret values — all secrets are in `/etc/reputation-oracle/sepolia.env` at mode 0600
   5. journald retention is capped (`SystemMaxUse=500M`) — verified via `journalctl --disk-usage`
-**Plans**: TBD
+**Plans**: 6 plans
+
+Plans:
+- [ ] 07-01-PLAN.md — Move tsx to dependencies in bot/package.json; verify npm ci --omit=dev
+- [ ] 07-02-PLAN.md — systemd service + timer unit templates + journald retention drop-in
+- [ ] 07-03-PLAN.md — deploy/bootstrap.sh (11-step idempotent VPS provisioner)
+- [ ] 07-04-PLAN.md — deploy/update.sh (atomic 4-step update) + deploy/start-timer.sh
+- [ ] 07-05-PLAN.md — deploy/RUNBOOK.md (operator lifecycle guide) + README.md pointer
+- [ ] 07-06-PLAN.md — deploy/ACCEPTANCE.md (PKG-01..PKG-08 VPS acceptance checklist)
 
 ### Phase 8: Observability
 **Goal**: Every Sepolia run is observable in Betterstack with structured log search by runId/chainId, and a heartbeat confirms liveness after each successful run
@@ -95,7 +103,7 @@ Standalone dependency-maintenance phase, not tied to a milestone. Completed betw
 | 4. Structured Logging | v1.1 | 2/2 | Complete | 2026-03-30 |
 | 5. Transaction Safety | v1.1 | 4/4 | Complete | 2026-04-21 |
 | 6. IPFS Evidence | v1.1 | 5/5 | Complete | 2026-04-22 |
-| 7. Packaging | v1.2 | 0/? | Not started | - |
+| 7. Packaging | v1.2 | 0/6 | Not started | - |
 | 8. Observability | v1.2 | 0/? | Not started | - |
 | 9. Mainnet Cutover | v1.2 | 0/? | Not started | - |
 
