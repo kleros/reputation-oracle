@@ -185,18 +185,18 @@ This is the primary acceptance gate for Phase 7.
 
 ```bash
 # Run dry-run as oracle user
-sudo -u oracle --preserve-env=HOME \
-  env $(cat /etc/reputation-oracle/sepolia.env | grep -v '^#' | grep -v '^$' | xargs) \
-  /usr/bin/node --import tsx /opt/reputation-oracle/bot/src/index.ts --dry-run
+sudo -u oracle /usr/bin/node \
+  --env-file /etc/reputation-oracle/sepolia.env \
+  --import tsx /opt/reputation-oracle/bot/src/index.ts --dry-run
 ```
 
 Capture and inspect the RunSummary:
 
 ```bash
 # Extract and pretty-print RunSummary from stdout
-sudo -u oracle --preserve-env=HOME \
-  env $(cat /etc/reputation-oracle/sepolia.env | grep -v '^#' | grep -v '^$' | xargs) \
-  /usr/bin/node --import tsx /opt/reputation-oracle/bot/src/index.ts --dry-run \
+sudo -u oracle /usr/bin/node \
+  --env-file /etc/reputation-oracle/sepolia.env \
+  --import tsx /opt/reputation-oracle/bot/src/index.ts --dry-run \
   | grep '"type":"RunSummary"' \
   | python3 -m json.tool
 ```

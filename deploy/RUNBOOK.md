@@ -99,9 +99,9 @@ sudo chown oracle:oracle /etc/reputation-oracle/sepolia.env
 After filling secrets, run the bot in dry-run mode as the `oracle` user to confirm everything works before enabling the live timer.
 
 ```bash
-sudo -u oracle --preserve-env=HOME \
-  env $(cat /etc/reputation-oracle/sepolia.env | grep -v '^#' | grep -v '^$' | xargs) \
-  /usr/bin/node --import tsx /opt/reputation-oracle/bot/src/index.ts --dry-run
+sudo -u oracle /usr/bin/node \
+  --env-file /etc/reputation-oracle/sepolia.env \
+  --import tsx /opt/reputation-oracle/bot/src/index.ts --dry-run
 ```
 
 **Acceptance criteria (all must hold):**
@@ -118,9 +118,9 @@ sudo -u oracle --preserve-env=HOME \
 **Parsing the RunSummary:**
 
 ```bash
-sudo -u oracle --preserve-env=HOME \
-  env $(cat /etc/reputation-oracle/sepolia.env | grep -v '^#' | grep -v '^$' | xargs) \
-  /usr/bin/node --import tsx /opt/reputation-oracle/bot/src/index.ts --dry-run \
+sudo -u oracle /usr/bin/node \
+  --env-file /etc/reputation-oracle/sepolia.env \
+  --import tsx /opt/reputation-oracle/bot/src/index.ts --dry-run \
   | grep '"type":"RunSummary"' | python3 -m json.tool
 ```
 
