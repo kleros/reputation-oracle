@@ -611,22 +611,22 @@ Affected sites to update: `bot/src/index.ts:20` (summary init), `bot/src/index.t
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Betterstack Telemetry field naming after ingest**
+1. **Betterstack Telemetry field naming after ingest** — **RESOLVED** via operator dashboard check + RUNBOOK fallback query
    - What we know: pino emits NDJSON with `{"summary": {"itemsFetched": 5, ...}}` as a nested object
    - What's unclear: Does Betterstack Telemetry index this as `summary.itemsFetched` (dot-path) or require `JSONExtract()` in the ClickHouse SQL alert query?
-   - Recommendation: Operator checks in Betterstack dashboard after first few live runs; RUNBOOK.md §Betterstack should include a note: "if the query returns no results, try `raw` LIKE `%itemsFetched%` first to confirm field name"
+   - Resolution: Deferred to operator verification after first live runs. Plan 08-06 RUNBOOK.md §9.1 includes a fallback `LIKE '%itemsFetched%'` query so operator can discover the correct field path and adjust the alert rule accordingly. No architectural impact on the plan.
 
-2. **`transport.end()` → `'close'` event timing vs. `logtail.flush()` HTTP await**
+2. **`transport.end()` → `'close'` event timing vs. `logtail.flush()` HTTP await** — **RESOLVED** by 5s fallback timer as the safety net
    - What we know: `pino-abstract-transport` calls `close()` (= `logtail.flush()`) in `stream._destroy`. `stream._destroy` fires on `transport.end()`.
    - What's unclear: Does `@logtail/node`'s `flush()` complete all in-flight HTTP requests before resolving? Or does it just flush the batch queue without awaiting responses?
-   - Recommendation: The 5-second fallback timer (D-17) is the safety net. If HTTP responses aren't awaited, some lines may be in-flight but not confirmed. This is acceptable for the use case.
+   - Resolution: The 5-second fallback timer (D-17) guarantees `closeLogger` never blocks exit regardless of whether `'close'` fires before or after HTTP await. A small window of in-flight-but-unconfirmed log lines is acceptable for this use case; losing the tail of the summary log on Betterstack's side is better than hanging the systemd exit.
 
-3. **Betterstack Telemetry source ID format for ClickHouse query**
+3. **Betterstack Telemetry source ID format for ClickHouse query** — **RESOLVED** via RUNBOOK operator lookup instruction
    - What we know: Table name is `t<source_id>_your_source_logs` where source_id is visible in Betterstack account settings
    - What's unclear: Exact format of source_id (numeric? UUID?)
-   - Recommendation: RUNBOOK.md §Betterstack should say "find your source ID in Betterstack → Sources → [source name] → Settings; substitute it in the query"
+   - Resolution: Plan 08-06 RUNBOOK.md §9.1 instructs operator to look up the source ID in Betterstack → Sources → [source name] → Settings and substitute it in the alert-rule query. No code change needed — this is an operator-time configuration step.
 
 ---
 

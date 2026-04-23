@@ -26,8 +26,8 @@ v1.2 adds no new business logic. Goal: package the bot for VPS operation on Sepo
 - [ ] **OBS-04**: Heartbeat ping failures never cascade to bot exit status — log and swallow with bounded HTTP timeout
 - [ ] **OBS-05**: `closeLogger(cb)` exported from `bot/src/logger.ts` drains multi-transport worker threads before `process.exit`; `index.ts` calls it instead of `logger.flush()`
 - [ ] **OBS-06**: `BETTERSTACK_SOURCE_TOKEN` and `BETTERSTACK_HEARTBEAT_URL` added to pino `redact` config to prevent self-exfiltration in error logs
-- [ ] **OBS-07**: Betterstack dashboard documented (source token setup, monitor URL, grace period = 20 min, email alert channel), with alerts muted during 7-day Sepolia burn-in
-- [ ] **OBS-08**: Betterstack alert rule fires when `RunSummary.itemsFetched === 0` for 3+ consecutive runs (detects silent list-misconfiguration)
+- [ ] **OBS-07**: Betterstack dashboard documented (source token setup, monitor URL, grace period = 10 min, email alert channel), with alerts muted during 7-day Sepolia burn-in — grace revised 2026-04-23 from 20→10min alongside Phase 7 D-13 timer cadence 15→5min
+- [ ] **OBS-08**: Betterstack alert rule fires when `RunSummary.itemsFetched === 0` for 5+ consecutive runs (detects silent list-misconfiguration) — streak revised 2026-04-23 from 3→5 runs alongside Phase 7 D-13 timer cadence 15→5min; "3+" floor in earlier drafts is superseded
 
 ### Mainnet
 
