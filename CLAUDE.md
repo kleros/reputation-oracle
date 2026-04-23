@@ -137,6 +137,7 @@ See `.planning/research/STACK.md` for full rationale, alternatives, and version 
 **Authoritative (current):**
 - `CLAUDE.md` (this file) — architecture, conventions, constraints
 - `.planning/PROJECT.md` — project context, validated requirements, key decisions
+- `deploy/RUNBOOK.md` — VPS ops: bootstrap, secret fill, dry-run, timer enable, update/rollback, Betterstack alerts (§9), burn-in gate (§10)
 
 **v1.0 planning artifacts (archived, read-only):**
 - `.planning/milestones/v1.0-REQUIREMENTS.md` — v1 requirements with final status
