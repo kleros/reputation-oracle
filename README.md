@@ -87,3 +87,15 @@ npm run start
 - **Auditable** -- Every feedback transaction includes an evidence URI linking back to the PGTCR item, stake amounts, and dispute outcomes.
 - **Upgradeable** -- Router uses UUPS proxy pattern. Future support for multiple PGTCR lists and Kleros products without redeployment.
 - **Minimal** -- No configurable values, no feature flags, no admin dashboard. The contract encodes the rules; the bot enforces them.
+
+## Deployment
+
+The bot runs on Ubuntu 24.04 via a systemd timer. A single idempotent bootstrap script provisions a fresh VPS in under 10 minutes.
+
+**Quick start:**
+```bash
+sudo git clone https://github.com/kleros/reputation-oracle /opt/reputation-oracle
+cd /opt/reputation-oracle && sudo ./deploy/bootstrap.sh
+```
+
+See [`deploy/RUNBOOK.md`](deploy/RUNBOOK.md) for full instructions: secret fill, dry-run validation, timer enable, updates, rollback, and troubleshooting.
