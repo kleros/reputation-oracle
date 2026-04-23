@@ -85,8 +85,8 @@ Plans:
 - [x] 08-02-PLAN.md — types.ts: RunSummary.items → itemsFetched rename + index.ts call sites
 - [x] 08-03-PLAN.md — logger.ts: pino multi-transport + @logtail/pino + closeLogger + heartbeat URL redaction
 - [x] 08-04-PLAN.md — heartbeat.ts (NEW): sendHeartbeat with AbortSignal.timeout + /fail routing + 7 unit tests
-- [ ] 08-05-PLAN.md — index.ts: runId generation, child logger binding, sendHeartbeat wiring, closeLogger swap
-- [ ] 08-06-PLAN.md — deploy/bootstrap.sh typo fix + deploy/RUNBOOK.md §9 Betterstack Setup + §10 Burn-in Gate
+- [x] 08-05-PLAN.md — index.ts: runId generation, child logger binding, sendHeartbeat wiring, closeLogger swap
+- [x] 08-06-PLAN.md — deploy/bootstrap.sh typo fix + deploy/RUNBOOK.md §9 Betterstack Setup + §10 Burn-in Gate
 
 ### Phase 9: Mainnet Cutover
 **Goal**: Router UUPS proxy is live on Ethereum Mainnet with a dedicated systemd instance, and the first real Mainnet feedback transaction is verified on Etherscan
