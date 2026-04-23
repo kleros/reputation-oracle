@@ -225,7 +225,7 @@ export async function executeActions(
 				evidence,
 				metadata,
 				config.PINATA_JWT,
-				config.PINATA_TIMEOUT_MS ?? 30_000,
+				config.PINATA_TIMEOUT_MS,
 			);
 			uploadsSucceeded++;
 			consecutiveFailures = 0; // D-18: reset on success
