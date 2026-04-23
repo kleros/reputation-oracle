@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Deploy-to-Mainnet
-status: completed
+status: executing
 stopped_at: Phase 08 context gathered non-interactively (Telegram MCP disconnect); 3 DISC items flagged for user review before plan-phase
-last_updated: "2026-04-23T18:45:11.399Z"
-last_activity: 2026-04-23
+last_updated: "2026-04-23T20:13:21.920Z"
+last_activity: 2026-04-23 -- Phase 8 planning complete
 progress:
   total_phases: 3
   completed_phases: 1
-  total_plans: 6
+  total_plans: 12
   completed_plans: 6
-  percent: 100
+  percent: 50
 ---
 
 # Project State
@@ -28,8 +28,8 @@ See: .planning/PROJECT.md (updated 2026-04-23 after v1.2 milestone kickoff)
 Milestone: v1.2 — Deploy-to-Mainnet
 Phase: 07 (packaging) — COMPLETE (live-VPS UAT deferred)
 Plan: 6 of 6
-Status: Complete — live-VPS acceptance deferred to operator; ready to begin Phase 08 (Observability)
-Last activity: 2026-04-23
+Status: Ready to execute
+Last activity: 2026-04-23 -- Phase 8 planning complete
 
 Progress: [████████████████████] 100% (code) · deferred (live-VPS UAT)
 
