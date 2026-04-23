@@ -36,7 +36,7 @@ Out of scope: Betterstack wiring (Phase 8), Mainnet ERC-8004 wiring and RPC fall
 ### systemd unit design
 - **D-11:** Instance-unit template from day one: `reputation-oracle@.service` + `reputation-oracle@.timer`. Sepolia enables `reputation-oracle@sepolia.timer`. Phase 9 reuses the same template for `reputation-oracle@mainnet.timer` — no config drift. Instance specifier `%i` selects `/etc/reputation-oracle/%i.env`.
 - **D-12:** Service: `Type=oneshot`, `RemainAfterExit=no` (explicit), `After=network-online.target`, `Wants=network-online.target`, `WorkingDirectory=/opt/reputation-oracle/bot`, `EnvironmentFile=/etc/reputation-oracle/%i.env`, `ExecStart=/usr/bin/node --import tsx /opt/reputation-oracle/bot/src/index.ts`, `StandardOutput=journal`, `StandardError=journal`, `SyslogIdentifier=reputation-oracle-%i`.
-- **D-13:** Timer: `OnBootSec=2min`, `OnUnitActiveSec=15min`, `RandomizedDelaySec=60`, `Persistent=true`, `AccuracySec=30s`, `Unit=reputation-oracle@%i.service`. Install `WantedBy=timers.target`.
+- **D-13:** Timer: `OnBootSec=2min`, `OnUnitActiveSec=5min`, `RandomizedDelaySec=60`, `Persistent=true`, `AccuracySec=30s`, `Unit=reputation-oracle@%i.service`. Install `WantedBy=timers.target`. **Revised 2026-04-23** from original `OnUnitActiveSec=15min` → `5min` for fresher reputation signals (~3min avg event-to-bot lag vs ~8min). Triggers Phase 8 D-04 (grace 20→10min) and D-24 (streak 3→5 runs). Mainnet cadence TBD in Phase 9 — may diverge via per-instance systemd drop-in.
 - **D-14:** No `Restart=` directive. `Type=oneshot` + timer = implicit retry. `Restart=on-failure` would thrash on 429s (P1-03).
 
 ### Hardening (PKG-05 minimum only)

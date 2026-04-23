@@ -83,6 +83,7 @@ All v1.1 decisions logged in PROJECT.md Key Decisions table. Archive in `.planni
 - [Phase 07-packaging]: Dry-run command inline in RUNBOOK.md (no separate verify.sh wrapper) — D-29 pattern, simpler for operators
 - [Phase 07-packaging]: Acceptance checklist maps 1:1 to PKG-01..PKG-08 with exact shell commands and expected output patterns — not vague prose
 - [Phase 07-packaging]: Dry-run command in PKG-08 uses --preserve-env=HOME + grep filters matching RUNBOOK.md §3 exactly
+- [Phase 07→08 revision 2026-04-23]: Timer cadence 15→5min (Phase 7 D-13). Fresher reputation signals (~3min avg lag vs ~8min). Triggers Phase 8 D-04 grace 20→10min, D-24 streak 3→5 consecutive empty runs. Mainnet cadence TBD in Phase 9 — may diverge via per-instance systemd drop-in if RPC cost dictates.
 
 ### Deferred Items
 

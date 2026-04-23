@@ -19,7 +19,7 @@ expected: Clone to `/opt/reputation-oracle`, run `sudo ./deploy/bootstrap.sh` �
 result: [deferred — execute at VPS provisioning time]
 
 ### 2. systemd timer fires on schedule
-expected: After `sudo ./deploy/start-timer.sh sepolia`, `systemctl list-timers reputation-oracle@sepolia.timer` shows active (waiting); first run appears in `journalctl -u reputation-oracle@sepolia -n 20` within 2 minutes (OnBootSec=2min); subsequent runs every 15 min.
+expected: After `sudo ./deploy/start-timer.sh sepolia`, `systemctl list-timers reputation-oracle@sepolia.timer` shows active (waiting); first run appears in `journalctl -u reputation-oracle@sepolia -n 20` within 2 minutes (OnBootSec=2min); subsequent runs every 5 min (cadence revised 2026-04-23 from 15→5min).
 result: [deferred — execute at VPS provisioning time]
 
 ### 3. Secrets not exposed by `systemctl show`

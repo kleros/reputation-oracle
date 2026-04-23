@@ -168,7 +168,7 @@ sudo /opt/reputation-oracle/deploy/update.sh sepolia
 
 This script atomically: stops the timer → `git pull --ff-only` → `npm ci --omit=dev` → starts the timer.
 
-At most one scheduled run is skipped (less than 15 min gap). The stateless bot catches up fully on the next run — no action is missed because the bot recomputes the full diff on every run.
+At most one scheduled run is skipped (less than 5 min gap). The stateless bot catches up fully on the next run — no action is missed because the bot recomputes the full diff on every run.
 
 **If update.sh fails mid-sequence:** The script prints the timer state and a recovery hint. Re-run the same command — it is safe to retry:
 

@@ -80,17 +80,17 @@ systemctl is-active reputation-oracle@sepolia.timer
 
 # Verify schedule
 systemctl list-timers reputation-oracle@sepolia.timer
-# Expected: shows next trigger in <= 15 min; RandomizedDelaySec visible
+# Expected: shows next trigger in <= 5 min; RandomizedDelaySec visible
 
 # Verify timer parameters
 systemctl show reputation-oracle@sepolia.timer | grep -E "OnUnitActiveSec|Persistent|RandomizedDelaySec"
-# Expected: OnUnitActiveSec=15min, Persistent=yes, RandomizedDelaySec=60s (values may show in microseconds)
+# Expected: OnUnitActiveSec=5min, Persistent=yes, RandomizedDelaySec=60s (values may show in microseconds)
 ```
 
 - [ ] `/etc/systemd/system/reputation-oracle@.service` exists
 - [ ] `/etc/systemd/system/reputation-oracle@.timer` exists
 - [ ] Timer is `active` after `start-timer.sh sepolia`
-- [ ] `list-timers` shows next trigger within 15 min
+- [ ] `list-timers` shows next trigger within 5 min
 
 ---
 

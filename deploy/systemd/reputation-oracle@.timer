@@ -3,7 +3,7 @@ Description=Kleros Reputation Oracle timer (%i)
 
 [Timer]
 OnBootSec=2min
-OnUnitActiveSec=15min
+OnUnitActiveSec=5min
 RandomizedDelaySec=60
 Persistent=true
 AccuracySec=30s

@@ -22,7 +22,7 @@ Out of scope: Mainnet RPC fallback (Phase 9 MAIN-07), Mainnet deployment (Phase 
 - **D-01:** Log shipping vendor: **Betterstack** (formerly Logtail + Better Uptime). No other vendor evaluated — already committed during v1.2 kickoff.
 - **D-02:** Transport library: `@logtail/pino` multi-transport (Betterstack's official pino transport — worker-thread-backed, async flushing). Pino v10 compatible. Installed as a regular `dependencies` entry in `bot/package.json`.
 - **D-03:** 7-day Sepolia burn-in gate is **manual**: before Phase 9 enables the Mainnet timer, operator confirms in Betterstack Uptime that 7+ consecutive successful heartbeats with `runId`/`chainId` present in every log line. Documented in `deploy/RUNBOOK.md` §Burn-in. No automated gate in bot code.
-- **D-04:** Alert grace period: **20 minutes** after the timer's expected 15-min cadence (25 min edge-triggered from Betterstack's perspective = heartbeat + 20 min = next expected window). Email alerts only for v1.2 — no PagerDuty/Slack escalation.
+- **D-04:** Alert grace period: **10 minutes** after the timer's expected 5-min cadence (≈2 missed runs before alert). Revised from 20min on 2026-04-23 when the timer cadence moved from 15→5min (Phase 7 D-13); keeping 20min grace against a 5min cadence would require 4 missed runs before alerting, too tolerant. Email alerts only for v1.2 — no PagerDuty/Slack escalation.
 
 ### runId generation
 
@@ -61,7 +61,7 @@ Out of scope: Mainnet RPC fallback (Phase 9 MAIN-07), Mainnet deployment (Phase 
 
 ### OBS-08 silent-list alert
 
-- **D-24:** Alert rule is **configured in Betterstack's dashboard UI**, not in bot code. Bot code simply emits the `RunSummary` with accurate `itemsFetched` (renamed internally from `summary.items`; see D-25). Betterstack's Telemetry alert fires on the aggregation `count(runs where itemsFetched==0) >= 3` over a rolling window matching the timer cadence (~45 min for 3 consecutive 15-min runs).
+- **D-24:** Alert rule is **configured in Betterstack's dashboard UI**, not in bot code. Bot code simply emits the `RunSummary` with accurate `itemsFetched` (renamed internally from `summary.items`; see D-25). Betterstack's Telemetry alert fires on the aggregation `count(runs where itemsFetched==0) >= 5` over a rolling window matching the timer cadence (~25 min for 5 consecutive 5-min runs). Revised 2026-04-23 from 3 consecutive runs to 5 when the timer cadence moved from 15→5min (Phase 7 D-13); at 5min cadence, 3 runs = only 15min of silence, too jumpy for transient subgraph hiccups. OBS-08's "3+ consecutive runs" wording in REQUIREMENTS.md is now read as the floor — actual configured threshold is 5 at Sepolia's 5min cadence.
 - **D-25:** Rename `RunSummary.items` → `RunSummary.itemsFetched` for consistency with requirement text, dashboard query readability, and future-proofing. Update `emitSummary`, types, and all logger lines that reference `summary.items`. One-line type migration — low blast radius.
 - **D-26:** Dashboard configuration documented in `deploy/RUNBOOK.md` §Betterstack with exact query syntax (or at least the Telemetry UI field values). Not checked into code.
 
