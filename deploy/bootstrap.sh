@@ -110,7 +110,7 @@ CHAIN_ID=11155111
 RPC_URL=
 ROUTER_ADDRESS=
 PGTCR_ADDRESS=0x3162df9669affa8b6b6ff2147afa052249f00447
-SUBGRAPH_URL=
+SUBGRAPH_URL=https://api.goldsky.com/api/public/project_cmgx9all3003atlp2bqha1zif/subgraphs/pgtcr-sepolia/v0.0.2/gn
 BOT_PRIVATE_KEY=
 
 # ── Optional (uncomment to override defaults) ────────────────────────────────
