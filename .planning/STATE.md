@@ -99,6 +99,7 @@ None.
 | 260423-nw1 | Add Stop hook for end-of-turn linting across bot and contracts | 2026-04-23 | ac1e746 | Complete | [260423-nw1-add-stop-hook-for-end-of-turn-linting-ac](./quick/260423-nw1-add-stop-hook-for-end-of-turn-linting-ac/) |
 | 260423-o3o | Auto-fix pre-existing lint drift surfaced by Stop hook (biome safe fixes + forge fmt) | 2026-04-23 | f863bc9 | Complete | [260423-o3o-auto-fix-pre-existing-lint-drift-surface](./quick/260423-o3o-auto-fix-pre-existing-lint-drift-surface/) |
 | 260423-o9o | Clear trivial Biome warnings — dead import, biome-ignore comments with rationale, template literals | 2026-04-23 | 0ad4584 | Complete | [260423-o9o-clear-trivial-biome-warnings-dead-import](./quick/260423-o9o-clear-trivial-biome-warnings-dead-import/) |
+| 260423-odh | Type viem TransactionReceipt mocks in chain.test.ts via makeReceipt() helper — biome fully clean | 2026-04-23 | _pending_ | Verified | [260423-odh-type-viem-transactionreceipt-mocks-in-ch](./quick/260423-odh-type-viem-transactionreceipt-mocks-in-ch/) |
 
 ## Session Continuity
 
