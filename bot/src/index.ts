@@ -17,7 +17,15 @@ function flushAndExit(code: number): void {
 
 async function main(): Promise<void> {
 	const startTime = Date.now();
-	const summary: RunSummary = { items: 0, valid: 0, actions: 0, txSent: 0, errors: 0, durationMs: 0, skipped: 0 };
+	const summary: RunSummary = {
+		itemsFetched: 0,
+		valid: 0,
+		actions: 0,
+		txSent: 0,
+		errors: 0,
+		durationMs: 0,
+		skipped: 0,
+	};
 
 	// Register graceful shutdown handlers before any async work (D-03, D-05)
 	const shutdownHolder: ShutdownHolder = { shutdown: false };
@@ -40,7 +48,7 @@ async function main(): Promise<void> {
 		// 3. Fetch all PGTCR items from subgraph
 		const rawItems = await fetchAllItems(config.SUBGRAPH_URL, config.PGTCR_ADDRESS);
 		logger.info({ count: rawItems.length }, "Fetched raw items from subgraph");
-		summary.items = rawItems.length;
+		summary.itemsFetched = rawItems.length;
 
 		// 4. Validate and transform items (invalid items logged + skipped by validation.ts)
 		const validItems: ValidatedItem[] = rawItems

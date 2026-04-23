@@ -62,7 +62,7 @@ export interface EvidenceJson {
 
 /** Run summary emitted as the final log line before exit (D-05, extended by D-20). */
 export interface RunSummary {
-	items: number;
+	itemsFetched: number; // D-25: renamed from items for dashboard query readability (OBS-08)
 	valid: number;
 	actions: number;
 	txSent: number; // counts only confirmed non-reverted receipts (semantic change from Phase 4)
