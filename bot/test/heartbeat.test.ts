@@ -1,8 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
+import type { Config } from "../src/config.js";
 // Note: heartbeat.ts will be created in Step 2
 import { sendHeartbeat } from "../src/heartbeat.js";
-import type { Config } from "../src/config.js";
 import type { RunSummary } from "../src/types.js";
 
 // Mock response factories (same style as ipfs.test.ts but simpler — no body needed)
