@@ -122,7 +122,8 @@ BOT_PRIVATE_KEY=
 
 # ── Phase 8: Observability (fill after Betterstack setup) ───────────────────
 # BETTERSTACK_SOURCE_TOKEN=
-# BETTERSTACK_HEARTBEAT_TOKEN=
+# BETTERSTACK_HEARTBEAT_URL=
+# HEARTBEAT_TIMEOUT_MS=10000
 ENVTEMPLATE
   >&2 echo "[bootstrap] Created /etc/reputation-oracle/sepolia.env stub (0600 oracle:oracle)"
 fi

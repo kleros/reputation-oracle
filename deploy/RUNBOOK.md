@@ -15,6 +15,8 @@
 6. [Rollback](#6-rollback)
 7. [Time Sync Check](#7-time-sync-check)
 8. [Troubleshooting](#8-troubleshooting)
+9. [Betterstack Setup](#9-betterstack-setup)
+10. [Burn-in Gate Procedure](#10-burn-in-gate-procedure)
 
 ---
 
@@ -70,7 +72,7 @@ sudo -u oracle nano /etc/reputation-oracle/sepolia.env
 
 **Leave unchanged:** `CHAIN_ID=11155111` and `PGTCR_ADDRESS=0x3162df9669affa8b6b6ff2147afa052249f00447` (pre-filled with correct Sepolia values).
 
-**Phase 8 keys** (`BETTERSTACK_SOURCE_TOKEN`, `BETTERSTACK_HEARTBEAT_TOKEN`) — leave commented out until Phase 8 Observability is set up.
+**Phase 8 keys** (`BETTERSTACK_SOURCE_TOKEN`, `BETTERSTACK_HEARTBEAT_URL`, `HEARTBEAT_TIMEOUT_MS`) — leave commented out until Phase 8 Observability is set up (Betterstack account required).
 
 **Values must be filled without surrounding quotes.** Correct: `RPC_URL=https://...`. Wrong: `RPC_URL="https://..."`.
 
@@ -276,3 +278,113 @@ stat -c '%a %U %G' /etc/reputation-oracle/sepolia.env
 # Check which Node binary systemd will use
 systemctl show reputation-oracle@sepolia.service | grep ExecStart
 ```
+
+---
+
+## 9. Betterstack Setup
+
+**Prerequisites:** Betterstack account (free tier sufficient for v1.2). Betterstack tokens must be filled in `/etc/reputation-oracle/sepolia.env` before the bot can forward logs or send heartbeats.
+
+### 9.1 Telemetry Source (Log Forwarding)
+
+1. Log in to [https://logs.betterstack.com](https://logs.betterstack.com)
+2. Go to **Sources** → **Connect source** → Select **Node.js** (uses pino transport)
+3. Copy the **Source token** shown on the configuration page
+4. On the VPS: `sudo -u oracle nano /etc/reputation-oracle/sepolia.env`
+   - Set `BETTERSTACK_SOURCE_TOKEN=<paste token here>`
+   - Uncomment the line (remove leading `#`)
+5. Restart the timer to apply: `sudo systemctl restart reputation-oracle@sepolia.timer`
+6. Wait for the next scheduled run (within 5 minutes), then verify in Betterstack Logs that entries appear with `runId` and `chainId` fields.
+
+**Filter by run:** In Betterstack Telemetry search bar, enter the `runId` UUID from a specific run (e.g. `a1b2c3d4-e5f6-7890-abcd-ef1234567890`).
+
+**itemsFetched === 0 alert (OBS-08):**
+
+Create an alert in Betterstack Telemetry to detect silent list-misconfiguration (5 consecutive empty runs):
+
+1. In Betterstack Logs → **Alerts** → **New alert**
+2. Alert type: **Threshold**
+3. ClickHouse SQL query:
+   ```sql
+   SELECT count()
+   FROM remote(t<source_id>_your_source_logs)
+   WHERE JSONExtract(raw, 'summary.itemsFetched', 'Nullable(Int64)') = 0
+     AND {{time}}
+   ```
+   Replace `<source_id>` with your source ID (visible in Betterstack → Sources → [source name] → Settings).
+   > **Note:** If the query returns no results after live runs, the field path may differ. Try `raw LIKE '%itemsFetched%'` to confirm field is present, then adjust the JSONExtract path.
+4. Threshold: >= **5** (five runs with 0 items fetched — D-24 revised threshold at 5-min cadence)
+5. Confirmation period: **25 minutes** (5 runs x 5 min cadence)
+6. Alert channel: email (PagerDuty/Slack deferred to v1.3)
+7. Mute during burn-in (see §10)
+
+### 9.2 Uptime Monitor (Heartbeat)
+
+1. Log in to [https://uptime.betterstack.com](https://uptime.betterstack.com)
+2. Go to **Monitors** → **New monitor** → Select **Heartbeat**
+3. Configure:
+   - **Name:** `reputation-oracle-sepolia`
+   - **Expected heartbeat every:** `5` minutes (matches PKG-03 systemd timer cadence)
+   - **Grace period:** `600` seconds (10 minutes = D-04; approximately 2 missed runs before alert)
+4. Betterstack generates a heartbeat URL in the form: `https://uptime.betterstack.com/api/v1/heartbeat/<TOKEN>`
+5. Copy the full URL
+6. On the VPS: `sudo -u oracle nano /etc/reputation-oracle/sepolia.env`
+   - Set `BETTERSTACK_HEARTBEAT_URL=<paste full URL here>`
+   - Uncomment the line (remove leading `#`)
+7. Restart the timer: `sudo systemctl restart reputation-oracle@sepolia.timer`
+8. After the next run, verify in Betterstack Uptime that the monitor shows **Up** and the last heartbeat timestamp matches the run time.
+
+**Alert channel:** Configure email alerts for the heartbeat monitor in Betterstack → Monitor → Edit → Escalation.
+
+**Mute during burn-in:** In Betterstack Uptime, use the **Maintenance window** feature to suppress alerts during the 7-day burn-in period (§10). Remove the maintenance window after burn-in completes.
+
+---
+
+## 10. Burn-in Gate Procedure
+
+**Purpose:** Validate that Phases 4+5+6+7+8 operate correctly end-to-end in production conditions before enabling the Mainnet timer (Phase 9). The gate is manual — an operator reviews the Betterstack dashboard and signs off.
+
+**Duration:** 7 calendar days from the first successful heartbeat.
+
+### 10.1 Gate Criteria
+
+All of the following must be TRUE before enabling the Mainnet timer:
+
+| # | Criterion | How to verify |
+|---|-----------|---------------|
+| B-01 | 7+ consecutive successful heartbeats (no `/fail` pings) | Betterstack Uptime → Monitor → History: 7+ green rows in a row |
+| B-02 | Every log entry in Betterstack Telemetry has `runId` and `chainId` fields | Betterstack Logs → search `runId:*` — all runs should match |
+| B-03 | No `systemicFailure` in any RunSummary during the burn-in period | Betterstack Logs → `systemicFailure:*` — should return empty |
+| B-04 | `itemsFetched > 0` on all non-empty runs (subgraph reachable) | Betterstack Logs → `summary.itemsFetched:0` — zero matching entries outside intentionally empty runs |
+| B-05 | No Betterstack Telemetry alert fired during the burn-in period | Betterstack Alerts → History — zero alerts |
+
+### 10.2 Gate Sign-off
+
+When all 5 criteria are met, document in the project state:
+
+```
+Phase 8 Sepolia burn-in complete.
+Date: <YYYY-MM-DD>
+First heartbeat: <runId of first successful run>
+7-day window: <start date> -> <end date>
+B-01: ✓ (N consecutive clean heartbeats)
+B-02: ✓
+B-03: ✓
+B-04: ✓
+B-05: ✓
+Gate OPEN — Phase 9 Mainnet Cutover may proceed.
+```
+
+Paste this into `.planning/STATE.md` under **Decisions** or create a dedicated `.planning/phases/08-observability/08-BURN-IN.md` file.
+
+### 10.3 If Gate Fails
+
+If any criterion fails during the 7-day window:
+
+1. Identify the failure from Betterstack logs (filter by `runId` of the failed run)
+2. Fix the root cause in the code
+3. Deploy the fix via `sudo /opt/reputation-oracle/deploy/update.sh sepolia`
+4. **Restart the 7-day window** from the first clean heartbeat after the fix
+5. Document the failure and fix in `.planning/STATE.md`
+
+The Mainnet timer MUST NOT be enabled until 7 consecutive clean heartbeats are observed after the most recent fix.
