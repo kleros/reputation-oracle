@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-04-22 after v1.1 milestone)
 Milestone: v1.1 — SHIPPED 2026-04-22
 Next: awaiting `/gsd:new-milestone` to define v1.2
 Status: Ready for next milestone
-Last activity: 2026-04-22 -- v1.1 Production Hardening milestone shipped
+Last activity: 2026-04-23 - Completed quick task 260423-2ev: fix IN-01 dead fallback in chain.ts
 
 Progress: [████████████████████] 100%
 
@@ -81,6 +81,7 @@ None at milestone close.
 | # | Description | Date | Commit | Status | Directory |
 |---|-------------|------|--------|--------|-----------|
 | 260329-mxh | Fix agent registration — move IdentityRegistry.register into Router so Router owns klerosAgentId | 2026-03-29 | 5fba9c0 | Verified | [260329-mxh-fix-agent-registration-move-identityregi](./quick/260329-mxh-fix-agent-registration-move-identityregi/) |
+| 260423-2ev | fix IN-01 — remove dead `?? 30_000` fallback on PINATA_TIMEOUT_MS at bot/src/chain.ts:228 | 2026-04-23 | 3e8b106 | Complete | [260423-2ev-fix-in-01](./quick/260423-2ev-fix-in-01/) |
 
 ## Session Continuity
 
