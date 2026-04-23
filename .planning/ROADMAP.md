@@ -65,7 +65,7 @@ Plans:
 - [x] 07-02-PLAN.md — systemd service + timer unit templates + journald retention drop-in
 - [x] 07-03-PLAN.md — deploy/bootstrap.sh (11-step idempotent VPS provisioner)
 - [x] 07-04-PLAN.md — deploy/update.sh (atomic 4-step update) + deploy/start-timer.sh
-- [ ] 07-05-PLAN.md — deploy/RUNBOOK.md (operator lifecycle guide) + README.md pointer
+- [x] 07-05-PLAN.md — deploy/RUNBOOK.md (operator lifecycle guide) + README.md pointer
 - [ ] 07-06-PLAN.md — deploy/ACCEPTANCE.md (PKG-01..PKG-08 VPS acceptance checklist)
 
 ### Phase 8: Observability
@@ -103,7 +103,7 @@ Plans:
 | 4. Structured Logging | v1.1 | 2/2 | Complete | 2026-03-30 |
 | 5. Transaction Safety | v1.1 | 4/4 | Complete | 2026-04-21 |
 | 6. IPFS Evidence | v1.1 | 5/5 | Complete | 2026-04-22 |
-| 7. Packaging | v1.2 | 4/6 | In Progress|  |
+| 7. Packaging | v1.2 | 5/6 | In Progress|  |
 | 8. Observability | v1.2 | 0/? | Not started | - |
 | 9. Mainnet Cutover | v1.2 | 0/? | Not started | - |
 

@@ -16,7 +16,7 @@ v1.2 adds no new business logic. Goal: package the bot for VPS operation on Sepo
 - [x] **PKG-05**: systemd hardening directives applied (`ProtectSystem=strict`, `PrivateTmp=true`, `NoNewPrivileges=true`, `TimeoutStartSec=300`, no `Restart=`)
 - [x] **PKG-06**: journald retention capped (`SystemMaxUse=500M`, `SystemMaxFileSize=50M`) to prevent silent log drops during incident
 - [x] **PKG-07**: Atomic-update runbook documented (stop timer → git pull → `npm ci` → start timer) with no secret-file overwrites
-- [ ] **PKG-08**: VPS deployment acceptance test: `--dry-run` invocation succeeds and emits a valid `RunSummary` after `npm ci --omit=dev`
+- [x] **PKG-08**: VPS deployment acceptance test: `--dry-run` invocation succeeds and emits a valid `RunSummary` after `npm ci --omit=dev`
 
 ### Observability
 
@@ -90,7 +90,7 @@ Maps each requirement to a phase. Updated during roadmap creation.
 | PKG-05 | Phase 7 | Complete |
 | PKG-06 | Phase 7 | Complete |
 | PKG-07 | Phase 7 | Complete |
-| PKG-08 | Phase 7 | Pending |
+| PKG-08 | Phase 7 | Complete |
 | OBS-01 | Phase 8 | Pending |
 | OBS-02 | Phase 8 | Pending |
 | OBS-03 | Phase 8 | Pending |
