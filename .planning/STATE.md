@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Deploy-to-Mainnet
-status: Ready to plan
-stopped_at: Roadmap written — Phase 7 is next
-last_updated: "2026-04-23T02:00:00.000Z"
-last_activity: 2026-04-23 -- v1.2 roadmap created; 3 phases defined (7-Packaging, 8-Observability, 9-Mainnet)
+status: planning
+stopped_at: Phase 7 context gathered
+last_updated: "2026-04-23T15:46:18.540Z"
+last_activity: 2026-04-23 — v1.2 roadmap written; 25 requirements mapped across 3 phases
 progress:
   total_phases: 3
   completed_phases: 0
@@ -56,6 +56,7 @@ Progress: [░░░░░░░░░░░░░░░░░░░░] 0%
 All v1.1 decisions logged in PROJECT.md Key Decisions table. Archive in `.planning/milestones/v1.1-ROADMAP.md`.
 
 **v1.2 decisions:**
+
 - Phase order: Packaging → Observability → Mainnet (systemd runtime required before Betterstack tokens; observability required before spending real ETH)
 - tsx moved to `dependencies` (not devDependencies) — packaging blocker; `npm ci --omit=dev` silently breaks without it
 - NodeSource apt for Node 22 (not nvm) — system-wide `/usr/bin/node` visible to systemd
@@ -98,6 +99,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-23 — v1.2 roadmap written
-Stopped at: Phase 7 Packaging ready to plan
+Last session: 2026-04-23T15:46:18.536Z
+Stopped at: Phase 7 context gathered
 Resume hint: `/gsd:plan-phase 7` to start packaging plans
