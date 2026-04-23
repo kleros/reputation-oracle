@@ -308,13 +308,13 @@ Create an alert in Betterstack Telemetry to detect silent list-misconfiguration 
    ```sql
    SELECT {{time}} AS time, count() AS value
    FROM {{source}}
-   WHERE JSONExtract(raw, 'summary.itemsFetched', 'Nullable(Int64)') = 0
+   WHERE `summary.itemsFetched` = 0
      AND dt BETWEEN {{start_time}} AND {{end_time}}
    GROUP BY time
    ORDER BY time
    ```
    `{{source}}` expands to the selected source's table; `{{start_time}}`/`{{end_time}}` bind to the alert's time window; `{{time}}` is a bucketing expression (use in `SELECT`/`GROUP BY` only — it errors in `WHERE` with `Illegal type (DateTime('UTC')) ... toStartOfInterval`).
-   > **Note:** If the query returns no results after live runs, the field path may differ. Try `raw LIKE '%itemsFetched%'` to confirm field is present, then adjust the JSONExtract path.
+   > **Note:** Betterstack auto-flattens nested pino fields into dotted top-level columns — `summary.itemsFetched` is queryable as a native numeric column (backticks required; dot is a name separator). Do NOT use `JSONExtract(raw, 'summary.itemsFetched', ...)` — ClickHouse treats each path arg as a single key, so the dotted string matches nothing (nested form would be `JSONExtract(raw, 'summary', 'itemsFetched', 'Nullable(Int64)')`, but the flattened column is cleaner and faster).
 4. Chart panel (Visualization → Data tab):
    - X-axis column: `time`
    - X-axis type: `Time series`
