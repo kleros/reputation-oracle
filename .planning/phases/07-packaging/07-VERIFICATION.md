@@ -1,9 +1,11 @@
 ---
 phase: 07-packaging
 verified: 2026-04-23T00:00:00Z
-status: human_needed
+status: deferred
 score: 10/10
 overrides_applied: 0
+deferred: 2026-04-23T00:00:00Z
+deferred_reason: "Live-VPS acceptance tracked in STATE.md Deferred Items; executed at VPS provisioning time. Codebase deliverables 10/10 verified; does not block Phase 8."
 human_verification:
   - test: "Run bootstrap.sh on a fresh Ubuntu 24.04 VPS end-to-end"
     expected: "All 11 steps complete without error; Node 22 installed; oracle user created; node_modules present; sepolia.env stub created at 0600 oracle:oracle; systemd units installed; daemon-reload complete"
@@ -26,7 +28,7 @@ human_verification:
 
 **Phase Goal:** Bot runs reliably on a fresh Ubuntu 24.04 VPS via a single idempotent bootstrap script with systemd scheduling and hardened secrets handling
 **Verified:** 2026-04-23T00:00:00Z
-**Status:** human_needed
+**Status:** deferred (live-VPS acceptance deferred to operator at VPS provisioning time — tracked in `.planning/STATE.md` Deferred Items; codebase deliverables 10/10 verified)
 **Re-verification:** No — initial verification
 
 ## Goal Achievement

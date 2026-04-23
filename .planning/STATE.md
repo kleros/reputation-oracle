@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Deploy-to-Mainnet
 status: completed
-stopped_at: Phase 07 codebase deliverables complete; awaiting live-VPS acceptance per 07-HUMAN-UAT.md (deploy/ACCEPTANCE.md is the operator checklist)
+stopped_at: Phase 07 complete (2026-04-23) — live-VPS acceptance deferred to operator at provisioning time; ready to begin Phase 08 (Observability)
 last_updated: "2026-04-23T18:17:32.652Z"
 last_activity: 2026-04-23
 progress:
@@ -26,12 +26,12 @@ See: .planning/PROJECT.md (updated 2026-04-23 after v1.2 milestone kickoff)
 ## Current Position
 
 Milestone: v1.2 — Deploy-to-Mainnet
-Phase: 07 (packaging) — EXECUTING
+Phase: 07 (packaging) — COMPLETE (live-VPS UAT deferred)
 Plan: 6 of 6
-Status: Codebase complete — awaiting live-VPS acceptance (07-HUMAN-UAT.md)
+Status: Complete — live-VPS acceptance deferred to operator; ready to begin Phase 08 (Observability)
 Last activity: 2026-04-23
 
-Progress: [████████████████████] 100% (code) · 0% (live-VPS UAT)
+Progress: [████████████████████] 100% (code) · deferred (live-VPS UAT)
 
 ## Performance Metrics
 
@@ -97,6 +97,7 @@ Items acknowledged and deferred at v1.1 milestone close on 2026-04-22:
 | code-review | IN-02 `parseInt(disputeId)` precision loss above 2^53 | Theoretical — Kleros dispute counts far below this; deferred to v1.3 |
 | requirement | PROD-02 monitoring integration | Addressed in v1.2 Phase 8 (OBS-01..OBS-08) |
 | requirement | PROD-03 key rotation + Pausable contract upgrade | Deferred to v1.3 |
+| uat | Phase 07 live-VPS acceptance (5 items: bootstrap E2E, systemd timer firing, secrets-not-exposed via `systemctl show`, PKG-08 dry-run on live VPS, journald retention active) | Deferred 2026-04-23 — operator executes `deploy/ACCEPTANCE.md` at VPS provisioning time; tracking file `.planning/phases/07-packaging/07-HUMAN-UAT.md` (status: deferred) |
 
 ### Pending Todos
 
