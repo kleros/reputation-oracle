@@ -15,7 +15,7 @@ v1.2 adds no new business logic. Goal: package the bot for VPS operation on Sepo
 - [x] **PKG-04**: Secrets delivered via `/etc/reputation-oracle/sepolia.env` at mode 0600 owned by the dedicated service account; never via inline `Environment=` directives
 - [x] **PKG-05**: systemd hardening directives applied (`ProtectSystem=strict`, `PrivateTmp=true`, `NoNewPrivileges=true`, `TimeoutStartSec=300`, no `Restart=`)
 - [x] **PKG-06**: journald retention capped (`SystemMaxUse=500M`, `SystemMaxFileSize=50M`) to prevent silent log drops during incident
-- [ ] **PKG-07**: Atomic-update runbook documented (stop timer → git pull → `npm ci` → start timer) with no secret-file overwrites
+- [x] **PKG-07**: Atomic-update runbook documented (stop timer → git pull → `npm ci` → start timer) with no secret-file overwrites
 - [ ] **PKG-08**: VPS deployment acceptance test: `--dry-run` invocation succeeds and emits a valid `RunSummary` after `npm ci --omit=dev`
 
 ### Observability
@@ -89,7 +89,7 @@ Maps each requirement to a phase. Updated during roadmap creation.
 | PKG-04 | Phase 7 | Complete |
 | PKG-05 | Phase 7 | Complete |
 | PKG-06 | Phase 7 | Complete |
-| PKG-07 | Phase 7 | Pending |
+| PKG-07 | Phase 7 | Complete |
 | PKG-08 | Phase 7 | Pending |
 | OBS-01 | Phase 8 | Pending |
 | OBS-02 | Phase 8 | Pending |
