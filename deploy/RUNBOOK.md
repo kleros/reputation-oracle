@@ -39,7 +39,7 @@ Bootstrap is idempotent — safe to re-run if it fails partway through.
 **What bootstrap does** (in order):
 1. `apt update` + installs prerequisites (git, curl, ca-certificates)
 2. Installs Node 22 LTS via NodeSource apt — skips if already v22 (uses `/usr/bin/node`, never nvm)
-3. Creates `oracle` system user with no shell, no home — `useradd --system --no-create-home --shell /usr/sbin/nologin oracle`
+3. Creates `oracle` system user — `useradd --system --shell /usr/sbin/nologin oracle` (`/usr/sbin/nologin` blocks interactive login; home dir required for `npm ci` cache)
 4. Creates `/etc/reputation-oracle/` directory (mode 0755, root-owned)
 5. Transfers repo ownership: `chown -R oracle:oracle /opt/reputation-oracle` (requires step 3)
 6. Runs `npm ci --omit=dev` as oracle (installs production deps including `tsx` into `bot/node_modules/`)
@@ -101,9 +101,9 @@ sudo chown oracle:oracle /etc/reputation-oracle/sepolia.env
 After filling secrets, run the bot in dry-run mode as the `oracle` user to confirm everything works before enabling the live timer.
 
 ```bash
-sudo -u oracle /usr/bin/node \
-  --env-file /etc/reputation-oracle/sepolia.env \
-  --import tsx /opt/reputation-oracle/bot/src/index.ts --dry-run
+sudo -u oracle bash -c 'cd /opt/reputation-oracle/bot && /usr/bin/node \
+  --env-file=/etc/reputation-oracle/sepolia.env \
+  --import tsx src/index.ts --dry-run'
 ```
 
 **Acceptance criteria (all must hold):**
@@ -120,9 +120,9 @@ sudo -u oracle /usr/bin/node \
 **Parsing the RunSummary:**
 
 ```bash
-sudo -u oracle /usr/bin/node \
-  --env-file /etc/reputation-oracle/sepolia.env \
-  --import tsx /opt/reputation-oracle/bot/src/index.ts --dry-run \
+sudo -u oracle bash -c 'cd /opt/reputation-oracle/bot && /usr/bin/node \
+  --env-file=/etc/reputation-oracle/sepolia.env \
+  --import tsx src/index.ts --dry-run' \
   | grep '"type":"RunSummary"' | python3 -m json.tool
 ```
 
@@ -252,22 +252,22 @@ Verify again with `timedatectl status`.
 
 ```bash
 # View recent runs (last 50 log lines)
-journalctl -u reputation-oracle@sepolia -n 50
+sudo journalctl -u reputation-oracle@sepolia -n 50
 
 # Follow live output (current run or next scheduled run)
-journalctl -u reputation-oracle@sepolia -f
+sudo journalctl -u reputation-oracle@sepolia -f
 
 # Structured JSON output (for Phase 8 log parsing)
-journalctl -u reputation-oracle@sepolia -o json | head -5
+sudo journalctl -u reputation-oracle@sepolia -o json | head -5
 
 # Check timer next scheduled fire time
-systemctl list-timers reputation-oracle@sepolia.timer
+sudo systemctl list-timers reputation-oracle@sepolia.timer
 
 # Check last run exit code (0 = success, 1 = systemic failure)
-systemctl show reputation-oracle@sepolia.service | grep ExecMainStatus
+sudo systemctl show reputation-oracle@sepolia.service | grep ExecMainStatus
 
 # Check journald disk usage
-journalctl --disk-usage
+sudo journalctl --disk-usage
 
 # Verify oracle user exists
 id oracle

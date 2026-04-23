@@ -39,6 +39,9 @@ CURRENT_STEP="2: Node 22 via NodeSource"
 if node --version 2>/dev/null | grep -q '^v22'; then
   >&2 echo "[bootstrap] Node 22 already installed: $(node --version) — skipping"
 else
+  >&2 echo "[bootstrap] Purging Ubuntu-shipped nodejs to prevent NodeSource conflict..."
+  apt-get remove --purge -y nodejs libnode-dev npm 2>/dev/null || true
+  apt-get autoremove -y
   >&2 echo "[bootstrap] Installing Node 22 via NodeSource apt..."
   curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
   apt-get install -y nodejs
@@ -54,7 +57,7 @@ CURRENT_STEP="3: oracle system user"
 if id oracle &>/dev/null; then
   >&2 echo "[bootstrap] User 'oracle' already exists — skipping useradd"
 else
-  useradd --system --no-create-home --shell /usr/sbin/nologin oracle
+  useradd --system --shell /usr/sbin/nologin oracle
   >&2 echo "[bootstrap] Created system user 'oracle'"
 fi
 
