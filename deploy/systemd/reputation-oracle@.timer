@@ -1,0 +1,13 @@
+[Unit]
+Description=Kleros Reputation Oracle timer (%i)
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=15min
+RandomizedDelaySec=60
+Persistent=true
+AccuracySec=30s
+Unit=reputation-oracle@%i.service
+
+[Install]
+WantedBy=timers.target
