@@ -140,7 +140,7 @@ sudo /opt/reputation-oracle/deploy/start-timer.sh sepolia
 
 This calls `systemctl enable --now reputation-oracle@sepolia.timer`, which:
 - Enables the timer to survive reboots (`WantedBy=timers.target`)
-- Starts the first 15-minute countdown immediately (first run fires after `OnBootSec=2min`)
+- Starts the first run after `OnBootSec=2min`; subsequent runs fire every 5 minutes (`OnUnitActiveSec=5min`)
 
 The script prints the timer status after enabling — verify the output shows `active (waiting)`.
 
