@@ -10,7 +10,7 @@ v1.2 adds no new business logic. Goal: package the bot for VPS operation on Sepo
 ### Packaging
 
 - [ ] **PKG-01**: Bot runs on fresh Ubuntu 24.04 VPS via a single idempotent `bootstrap.sh` (NodeSource Node 22, dedicated `oracle` user, `/opt/reputation-oracle`, `npm ci --omit=dev`)
-- [ ] **PKG-02**: Bot runs via `node --import tsx src/index.ts` with `tsx` moved to `dependencies` in `bot/package.json` (prevents `npm ci --omit=dev` break)
+- [x] **PKG-02**: Bot runs via `node --import tsx src/index.ts` with `tsx` moved to `dependencies` in `bot/package.json` (prevents `npm ci --omit=dev` break)
 - [ ] **PKG-03**: Sepolia instance scheduled via systemd instance template `reputation-oracle@sepolia.timer` (15-min monotonic interval, `Persistent=true`, `RandomizedDelaySec=60`)
 - [ ] **PKG-04**: Secrets delivered via `/etc/reputation-oracle/sepolia.env` at mode 0600 owned by the dedicated service account; never via inline `Environment=` directives
 - [ ] **PKG-05**: systemd hardening directives applied (`ProtectSystem=strict`, `PrivateTmp=true`, `NoNewPrivileges=true`, `TimeoutStartSec=300`, no `Restart=`)
@@ -84,7 +84,7 @@ Maps each requirement to a phase. Updated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | PKG-01 | Phase 7 | Pending |
-| PKG-02 | Phase 7 | Pending |
+| PKG-02 | Phase 7 | Complete |
 | PKG-03 | Phase 7 | Pending |
 | PKG-04 | Phase 7 | Pending |
 | PKG-05 | Phase 7 | Pending |

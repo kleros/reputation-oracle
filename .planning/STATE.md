@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Deploy-to-Mainnet
 status: executing
-stopped_at: Phase 7 context gathered
-last_updated: "2026-04-23T16:20:21.485Z"
-last_activity: 2026-04-23 -- Phase 7 planning complete
+stopped_at: Completed 07-01-PLAN.md
+last_updated: "2026-04-23T16:51:26.625Z"
+last_activity: 2026-04-23
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 6
-  completed_plans: 0
-  percent: 0
+  completed_plans: 1
+  percent: 17
 ---
 
 # Project State
@@ -21,15 +21,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-23 after v1.2 milestone kickoff)
 
 **Core value:** Kleros-backed, economically-secured reputation signals for ERC-8004 AI agents
-**Current focus:** Milestone v1.2 Deploy-to-Mainnet — Phase 7 Packaging is next
+**Current focus:** Phase 07 — packaging
 
 ## Current Position
 
 Milestone: v1.2 — Deploy-to-Mainnet
-Phase: 7 — Packaging (not started)
-Plan: —
+Phase: 07 (packaging) — EXECUTING
+Plan: 2 of 6
 Status: Ready to execute
-Last activity: 2026-04-23 -- Phase 7 planning complete
+Last activity: 2026-04-23
 
 Progress: [░░░░░░░░░░░░░░░░░░░░] 0%
 
@@ -48,6 +48,7 @@ Progress: [░░░░░░░░░░░░░░░░░░░░] 0%
 | 04-structured-logging | 2 | 2026-03-30 |
 | 05-transaction-safety | 4 | 2026-04-21 |
 | 06-ipfs-evidence | 5 | 2026-04-22 |
+| Phase 07-packaging P01 | 4m | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -65,6 +66,7 @@ All v1.1 decisions logged in PROJECT.md Key Decisions table. Archive in `.planni
 - viem `fallbackTransport` for Mainnet RPC resilience (primary Alchemy + fallback publicnode.com)
 - Mainnet signer = fresh keypair, never reused from Sepolia
 - 7-day Sepolia burn-in gate: Betterstack Uptime must show 7+ clean heartbeats before Mainnet timer enabled
+- [Phase 07-packaging]: tsx promoted to dependencies (not devDependencies) — npm ci --omit=dev would silently drop it otherwise (P1-02, D-04)
 
 ### Deferred Items
 
@@ -103,6 +105,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-23T16:12:03.811Z
-Stopped at: Phase 7 context gathered
+Last session: 2026-04-23T16:51:26.622Z
+Stopped at: Completed 07-01-PLAN.md
 Resume hint: `/gsd:plan-phase 7` to start packaging plans
