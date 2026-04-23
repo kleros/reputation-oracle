@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # deploy/update.sh — Atomic update for Kleros Reputation Oracle
 # Usage: sudo ./deploy/update.sh [sepolia|mainnet]
-# Sequence: stop timer → git pull → npm ci → start timer
+# Sequence: stop timer → git pull → install unit files + daemon-reload → npm ci → start timer
 # Safe to re-run after a mid-sequence failure.
 set -euo pipefail
 
@@ -41,6 +41,17 @@ systemctl stop "reputation-oracle@${INSTANCE}.timer"
 >&2 echo "[update:2/4] git pull (fast-forward only)"
 sudo -u oracle git -C "${REPO_ROOT}" pull --ff-only
 >&2 echo "[update:2/4] git pull complete"
+
+# ── Step 2b: Re-install unit files if changed ──────────────────────────────
+>&2 echo ""
+>&2 echo "[update:2b] Installing updated systemd unit files"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cp "${SCRIPT_DIR}/systemd/reputation-oracle@.service" /etc/systemd/system/
+cp "${SCRIPT_DIR}/systemd/reputation-oracle@.timer"   /etc/systemd/system/
+chmod 0644 /etc/systemd/system/reputation-oracle@.service
+chmod 0644 /etc/systemd/system/reputation-oracle@.timer
+systemctl daemon-reload
+>&2 echo "[update:2b] Unit files updated and daemon-reload complete"
 
 # ── Step 3: npm ci --omit=dev ───────────────────────────────────────────────
 >&2 echo ""
