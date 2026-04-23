@@ -13,10 +13,16 @@ import { privateKeyToAccount } from "viem/accounts";
 import { routerAbi } from "./abi/router.js";
 import type { Config } from "./config.js";
 import { buildFeedbackURI, buildNegativeEvidence, buildPositiveEvidence } from "./evidence.js";
-import { uploadEvidenceToIPFS, type PinataMetadata } from "./ipfs.js";
+import { type PinataMetadata, uploadEvidenceToIPFS } from "./ipfs.js";
 import { createChildLogger } from "./logger.js";
 import { estimateGasWithRetry, isRevertError } from "./tx.js";
-import { type Action, type EvidenceJson, type ExecuteActionsResult, FeedbackType, type ShutdownHolder } from "./types.js";
+import {
+	type Action,
+	type EvidenceJson,
+	type ExecuteActionsResult,
+	FeedbackType,
+	type ShutdownHolder,
+} from "./types.js";
 
 const log = createChildLogger("chain");
 
@@ -221,12 +227,7 @@ export async function executeActions(
 
 		uploadsAttempted++;
 		try {
-			const uploadResult = await uploadEvidenceToIPFS(
-				evidence,
-				metadata,
-				config.PINATA_JWT,
-				config.PINATA_TIMEOUT_MS,
-			);
+			const uploadResult = await uploadEvidenceToIPFS(evidence, metadata, config.PINATA_JWT, config.PINATA_TIMEOUT_MS);
 			uploadsSucceeded++;
 			consecutiveFailures = 0; // D-18: reset on success
 			orphanedCids.push(uploadResult.cid); // track for orphan reporting (removed on successful tx)

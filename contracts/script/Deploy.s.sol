@@ -49,8 +49,7 @@ contract Deploy is Script {
             console.log("  Implementation deployed at:", address(impl));
 
             bytes memory initData = abi.encodeCall(
-                KlerosReputationRouter.initialize,
-                (REPUTATION_REGISTRY, IDENTITY_REGISTRY, 0, msg.sender)
+                KlerosReputationRouter.initialize, (REPUTATION_REGISTRY, IDENTITY_REGISTRY, 0, msg.sender)
             );
             ERC1967Proxy proxy = new ERC1967Proxy(address(impl), initData);
             router = KlerosReputationRouter(address(proxy));

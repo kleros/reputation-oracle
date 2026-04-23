@@ -274,9 +274,7 @@ contract KlerosReputationRouterTest is Test {
 
         // feedbackType is None
         vm.prank(bot);
-        vm.expectRevert(
-            abi.encodeWithSelector(KlerosReputationRouter.KRR_NoPositiveFeedbackToRevoke.selector, agentId)
-        );
+        vm.expectRevert(abi.encodeWithSelector(KlerosReputationRouter.KRR_NoPositiveFeedbackToRevoke.selector, agentId));
         router.revokeOnly(agentId);
     }
 
@@ -289,9 +287,7 @@ contract KlerosReputationRouterTest is Test {
 
         // Try to revoke when state is Negative
         vm.prank(bot);
-        vm.expectRevert(
-            abi.encodeWithSelector(KlerosReputationRouter.KRR_NoPositiveFeedbackToRevoke.selector, agentId)
-        );
+        vm.expectRevert(abi.encodeWithSelector(KlerosReputationRouter.KRR_NoPositiveFeedbackToRevoke.selector, agentId));
         router.revokeOnly(agentId);
     }
 

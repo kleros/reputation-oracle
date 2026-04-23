@@ -53,9 +53,7 @@ contract Verify is Script {
             // ─── VER-04: Tag-filtered getSummary (verified) ─────────────────
             (uint64 vCount, int128 vValue,) =
                 IReputationRegistry(REPUTATION_REGISTRY).getSummary(agentId, clients, "verified", "");
-            console.log(
-                "  getSummary(\"verified\", \"\"): count=%d, value=%s", vCount, _int128ToString(vValue)
-            );
+            console.log("  getSummary(\"verified\", \"\"): count=%d, value=%s", vCount, _int128ToString(vValue));
             require(vCount == 1, "VER-04: tag1='verified' must return count=1 for Scenario 1 agents");
             require(vValue == 95, "VER-04: tag1='verified' must return value=95 for Scenario 1 agents");
             console.log("    [PASS]");
@@ -64,9 +62,7 @@ contract Verify is Script {
             // ─── VER-04: Tag-filtered getSummary (removed) ──────────────────
             (uint64 rCount, int128 rValue,) =
                 IReputationRegistry(REPUTATION_REGISTRY).getSummary(agentId, clients, "removed", "");
-            console.log(
-                "  getSummary(\"removed\", \"\"):  count=%d, value=%s", rCount, _int128ToString(rValue)
-            );
+            console.log("  getSummary(\"removed\", \"\"):  count=%d, value=%s", rCount, _int128ToString(rValue));
             require(rCount == 0, "VER-04: tag1='removed' must return count=0 for Scenario 1 agents");
             require(rValue == 0, "VER-04: tag1='removed' must return value=0 for Scenario 1 agents");
             console.log("    [PASS]");
@@ -133,11 +129,7 @@ contract Verify is Script {
     }
 
     /// @dev Convert FeedbackType enum to string for console output.
-    function _feedbackTypeToString(KlerosReputationRouter.FeedbackType fType)
-        internal
-        pure
-        returns (string memory)
-    {
+    function _feedbackTypeToString(KlerosReputationRouter.FeedbackType fType) internal pure returns (string memory) {
         if (fType == KlerosReputationRouter.FeedbackType.None) return "None";
         if (fType == KlerosReputationRouter.FeedbackType.Positive) return "Positive";
         return "Negative";

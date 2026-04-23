@@ -115,12 +115,20 @@ describe("executeActions — differentiated failure policy", () => {
 	it("SC-1a: skips action on gas estimation revert, continues to next action", async () => {
 		const action1 = makeAction(1n);
 		const action2 = makeAction(2n);
-		vi.mocked(uploadEvidenceToIPFS).mockResolvedValueOnce(makeIpfsResult()).mockResolvedValueOnce(makeIpfsResult("QmHash2"));
+		vi.mocked(uploadEvidenceToIPFS)
+			.mockResolvedValueOnce(makeIpfsResult())
+			.mockResolvedValueOnce(makeIpfsResult("QmHash2"));
 		vi.mocked(publicClient.estimateContractGas).mockRejectedValueOnce(makeRevertError()).mockResolvedValueOnce(21000n);
 		vi.mocked(walletClient.writeContract).mockResolvedValueOnce("0xhash1" as `0x${string}`);
 		vi.mocked(publicClient.waitForTransactionReceipt).mockResolvedValueOnce({ status: "success" } as any);
 
-		const result = await executeActions(walletClient, publicClient, [action1, action2], mockConfigWithJwt, shutdownHolder);
+		const result = await executeActions(
+			walletClient,
+			publicClient,
+			[action1, action2],
+			mockConfigWithJwt,
+			shutdownHolder,
+		);
 
 		expect(result.skipped).toBe(1);
 		expect(result.txSent).toBe(1);
@@ -131,7 +139,9 @@ describe("executeActions — differentiated failure policy", () => {
 		vi.useFakeTimers();
 		const action1 = makeAction(1n);
 		const action2 = makeAction(2n);
-		vi.mocked(uploadEvidenceToIPFS).mockResolvedValueOnce(makeIpfsResult()).mockResolvedValueOnce(makeIpfsResult("QmHash2"));
+		vi.mocked(uploadEvidenceToIPFS)
+			.mockResolvedValueOnce(makeIpfsResult())
+			.mockResolvedValueOnce(makeIpfsResult("QmHash2"));
 		vi.mocked(publicClient.estimateContractGas)
 			.mockRejectedValueOnce(new HttpRequestError({ url: "http://rpc", status: 503, body: {} }))
 			.mockRejectedValueOnce(new HttpRequestError({ url: "http://rpc", status: 503, body: {} }))
@@ -168,7 +178,9 @@ describe("executeActions — differentiated failure policy", () => {
 	it("skips action when receipt.status is reverted and advances nonce", async () => {
 		const action1 = makeAction(1n);
 		const action2 = makeAction(2n);
-		vi.mocked(uploadEvidenceToIPFS).mockResolvedValueOnce(makeIpfsResult()).mockResolvedValueOnce(makeIpfsResult("QmHash2"));
+		vi.mocked(uploadEvidenceToIPFS)
+			.mockResolvedValueOnce(makeIpfsResult())
+			.mockResolvedValueOnce(makeIpfsResult("QmHash2"));
 		vi.mocked(publicClient.estimateContractGas).mockResolvedValue(21000n);
 		vi.mocked(walletClient.writeContract)
 			.mockResolvedValueOnce("0xhash1" as `0x${string}`)
@@ -177,7 +189,13 @@ describe("executeActions — differentiated failure policy", () => {
 			.mockResolvedValueOnce({ status: "reverted" } as any)
 			.mockResolvedValueOnce({ status: "success" } as any);
 
-		const result = await executeActions(walletClient, publicClient, [action1, action2], mockConfigWithJwt, shutdownHolder);
+		const result = await executeActions(
+			walletClient,
+			publicClient,
+			[action1, action2],
+			mockConfigWithJwt,
+			shutdownHolder,
+		);
 
 		expect(result.skipped).toBe(1);
 		expect(result.txSent).toBe(1);
@@ -192,7 +210,9 @@ describe("executeActions — differentiated failure policy", () => {
 	it("SC-4: finishes action 1 when shutdown flag set during action 1, skips action 2", async () => {
 		const action1 = makeAction(1n);
 		const action2 = makeAction(2n);
-		vi.mocked(uploadEvidenceToIPFS).mockResolvedValueOnce(makeIpfsResult()).mockResolvedValueOnce(makeIpfsResult("QmHash2"));
+		vi.mocked(uploadEvidenceToIPFS)
+			.mockResolvedValueOnce(makeIpfsResult())
+			.mockResolvedValueOnce(makeIpfsResult("QmHash2"));
 		vi.mocked(publicClient.estimateContractGas).mockResolvedValue(21000n);
 		vi.mocked(walletClient.writeContract).mockResolvedValue("0xhash1" as `0x${string}`);
 		vi.mocked(publicClient.waitForTransactionReceipt).mockImplementationOnce(async () => {
@@ -201,7 +221,13 @@ describe("executeActions — differentiated failure policy", () => {
 			return { status: "success" } as any;
 		});
 
-		const result = await executeActions(walletClient, publicClient, [action1, action2], mockConfigWithJwt, shutdownHolder);
+		const result = await executeActions(
+			walletClient,
+			publicClient,
+			[action1, action2],
+			mockConfigWithJwt,
+			shutdownHolder,
+		);
 
 		expect(result.txSent).toBe(1);
 		expect(walletClient.writeContract).toHaveBeenCalledTimes(1);
@@ -240,7 +266,13 @@ describe("executeActions — IPFS prepare/execute split", () => {
 		vi.mocked(walletClient.writeContract).mockResolvedValueOnce("0xhash1" as `0x${string}`);
 		vi.mocked(publicClient.waitForTransactionReceipt).mockResolvedValueOnce({ status: "success" } as any);
 
-		const result = await executeActions(walletClient, publicClient, [makeAction(1n)], mockConfigWithJwt, shutdownHolder);
+		const result = await executeActions(
+			walletClient,
+			publicClient,
+			[makeAction(1n)],
+			mockConfigWithJwt,
+			shutdownHolder,
+		);
 
 		expect(uploadEvidenceToIPFS).toHaveBeenCalledTimes(1);
 		expect(walletClient.writeContract).toHaveBeenCalledTimes(1);
