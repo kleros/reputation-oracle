@@ -93,9 +93,7 @@ describe("Betterstack config fields", () => {
 		});
 		expect(result.success).toBe(true);
 		if (result.success) {
-			expect(result.data.BETTERSTACK_HEARTBEAT_URL).toBe(
-				"https://uptime.betterstack.com/api/v1/heartbeat/abc123",
-			);
+			expect(result.data.BETTERSTACK_HEARTBEAT_URL).toBe("https://uptime.betterstack.com/api/v1/heartbeat/abc123");
 		}
 	});
 
