@@ -61,6 +61,7 @@ async function main(): Promise<void> {
 		const routerStates = await readRouterStates(publicClient, config.ROUTER_ADDRESS, agentIds);
 
 		// Balance preflight — must happen before any transactions (D-06)
+		// biome-ignore lint/style/noNonNullAssertion: walletClient is constructed with a concrete account via privateKeyToAccount; account is always defined at runtime
 		const balance = await publicClient.getBalance({ address: walletClient.account!.address });
 		if (balance < config.MIN_BALANCE_WEI) {
 			logger.error(
@@ -90,7 +91,7 @@ async function main(): Promise<void> {
 				agentId: a.agentId.toString(),
 				item: { ...a.item, agentId: a.item.agentId.toString() },
 			}));
-			process.stdout.write(JSON.stringify(serializable, null, 2) + "\n");
+			process.stdout.write(`${JSON.stringify(serializable, null, 2)}\n`);
 			logger.info({ count: actions.length }, "Dry run complete");
 			emitSummary(summary, startTime);
 			flushAndExit(0);

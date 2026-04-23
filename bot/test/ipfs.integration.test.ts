@@ -11,6 +11,7 @@ const PINATA_PIN_URL = "https://api.pinata.cloud/pinning/pinJSONToIPFS";
 test.skipIf(!process.env.PINATA_JWT)(
 	"uploads throwaway JSON and unpins via DELETE (real Pinata API)",
 	async () => {
+		// biome-ignore lint/style/noNonNullAssertion: test.skipIf above guarantees PINATA_JWT is set when this body runs
 		const jwt = process.env.PINATA_JWT!;
 		const throwawayContent = {
 			test: true,

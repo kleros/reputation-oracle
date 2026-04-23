@@ -3,7 +3,6 @@ import {
 	type EstimateContractGasParameters,
 	http,
 	type PublicClient,
-	TransactionExecutionError,
 	createPublicClient as viemCreatePublicClient,
 	createWalletClient as viemCreateWalletClient,
 	WaitForTransactionReceiptTimeoutError,
