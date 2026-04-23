@@ -15,6 +15,7 @@
 		"lint:fix": "biome check --write ."
 	},
 	"dependencies": {
+		"@logtail/pino": "^0.5.8",
 		"graphql-request": "^7.4.0",
 		"pino": "^10.3.1",
 		"tsx": "^4.21.0",
