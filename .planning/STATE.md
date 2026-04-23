@@ -4,8 +4,8 @@ milestone: v1.2
 milestone_name: Deploy-to-Mainnet
 status: executing
 stopped_at: Phase 08 context gathered non-interactively (Telegram MCP disconnect); 3 DISC items flagged for user review before plan-phase
-last_updated: "2026-04-23T22:21:35.242Z"
-last_activity: 2026-04-23
+last_updated: "2026-04-23T22:55:00.000Z"
+last_activity: 2026-04-23 -- Quick task 260423-wzl — Phase 7 deploy issue fixes
 progress:
   total_phases: 3
   completed_phases: 2
@@ -120,6 +120,7 @@ None.
 | 260423-o3o | Auto-fix pre-existing lint drift surfaced by Stop hook (biome safe fixes + forge fmt) | 2026-04-23 | f863bc9 | Complete | [260423-o3o-auto-fix-pre-existing-lint-drift-surface](./quick/260423-o3o-auto-fix-pre-existing-lint-drift-surface/) |
 | 260423-o9o | Clear trivial Biome warnings — dead import, biome-ignore comments with rationale, template literals | 2026-04-23 | 0ad4584 | Complete | [260423-o9o-clear-trivial-biome-warnings-dead-import](./quick/260423-o9o-clear-trivial-biome-warnings-dead-import/) |
 | 260423-odh | Type viem TransactionReceipt mocks in chain.test.ts via makeReceipt() helper — biome fully clean | 2026-04-23 | 2cfe62b | Verified | [260423-odh-type-viem-transactionreceipt-mocks-in-ch](./quick/260423-odh-type-viem-transactionreceipt-mocks-in-ch/) |
+| 260423-wzl | Fix 4 Phase 7 deploy issues — bootstrap.sh nodejs purge + drop --no-create-home; RUNBOOK.md dry-run cwd fix + sudo prefixes | 2026-04-23 | 0ed9f2a | Complete | [260423-wzl-fix-4-deploy-issues-surfaced-during-phas](./quick/260423-wzl-fix-4-deploy-issues-surfaced-during-phas/) |
 
 ## Session Continuity
 
