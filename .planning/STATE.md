@@ -4,8 +4,8 @@ milestone: v1.2
 milestone_name: Deploy-to-Mainnet
 status: planning
 stopped_at: Phase 7 context gathered
-last_updated: "2026-04-23T15:46:18.540Z"
-last_activity: 2026-04-23 — v1.2 roadmap written; 25 requirements mapped across 3 phases
+last_updated: "2026-04-23T16:12:03.811Z"
+last_activity: 2026-04-23 — Completed quick task 260423-nw1: Add Stop hook for end-of-turn linting
 progress:
   total_phases: 3
   completed_phases: 0
@@ -96,9 +96,10 @@ None.
 |---|-------------|------|--------|--------|-----------|
 | 260329-mxh | Fix agent registration — move IdentityRegistry.register into Router so Router owns klerosAgentId | 2026-03-29 | 5fba9c0 | Verified | [260329-mxh-fix-agent-registration-move-identityregi](./quick/260329-mxh-fix-agent-registration-move-identityregi/) |
 | 260423-2ev | fix IN-01 — remove dead `?? 30_000` fallback on PINATA_TIMEOUT_MS at bot/src/chain.ts:228 | 2026-04-23 | 3e8b106 | Complete | [260423-2ev-fix-in-01](./quick/260423-2ev-fix-in-01/) |
+| 260423-nw1 | Add Stop hook for end-of-turn linting across bot and contracts | 2026-04-23 | 6d58153 | Complete | [260423-nw1-add-stop-hook-for-end-of-turn-linting-ac](./quick/260423-nw1-add-stop-hook-for-end-of-turn-linting-ac/) |
 
 ## Session Continuity
 
-Last session: 2026-04-23T15:46:18.536Z
+Last session: 2026-04-23T16:12:03.811Z
 Stopped at: Phase 7 context gathered
 Resume hint: `/gsd:plan-phase 7` to start packaging plans
