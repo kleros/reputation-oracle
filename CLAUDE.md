@@ -6,6 +6,24 @@ Work style: telegraph; noun-phrases ok; drop filler/grammar; min tokens
 
 Commits require GPG passphrase (interactive — will hang). Always use `-c commit.gpgsign=false` and append `Co-Authored-By: Claude <noreply@anthropic.com>` to commit messages.
 
+## Lint enforcement (Stop hook)
+
+`.claude/hooks/lint-check.sh` runs at end-of-turn. Blocks Stop + feeds stderr back if either fails:
+- `cd bot && npm run lint` — `biome check .` (must be 0 errors; warnings don't block)
+- `cd contracts && forge fmt --check` — any diff blocks
+
+Silent on success. Loop-guards via `stop_hook_active` (exits 0 on retry so you can always end the turn).
+
+**Fix order when it fires:**
+1. `cd bot && npm run lint:fix` — safe Biome auto-fixes (organize imports, reflow, remove safe-unsafe dead imports)
+2. `cd contracts && forge fmt` — Solidity formatting
+3. Remaining findings need manual judgment:
+   - **Never** `biome check --write --unsafe` blindly — some "unsafe" fixes change runtime semantics (e.g. `!` → `?.` in `walletClient.account!.address` would break the hot path).
+   - For correct `!` assertions: `// biome-ignore lint/style/noNonNullAssertion: <specific reason>` (rationale required by Biome).
+   - For viem mock typing: use `makeReceipt()`/`makeAction()`/`makeIpfsResult()` factory pattern in `bot/test/chain.test.ts` — centralize one `as Type` cast inside the helper, never `as any` at call sites.
+
+**Project baseline (as of 2026-04-23):** Biome reports **zero findings** across `bot/`. Any new warning means you introduced it — fix before committing, don't defer.
+
 ## Project
 
 Converts Kleros PGTCR (Stake Curate) curation events → ERC-8004 on-chain reputation feedback.
@@ -39,6 +57,7 @@ Revoke-then-negative (Scenario 2) ensures `getSummary` = -95, not average of (+9
 - **No multi-chain routing in one process.** One deployment per chain, chain = env vars.
 - **No daemon mode.** One-shot run, external scheduler invokes. No `while(true)`.
 - **No mock-call-ordering tests.** Test boundaries (subgraph, contracts), not wiring.
+- **No `as any` anywhere.** Biome's `noExplicitAny` is enforced; the Stop hook blocks on errors. Use typed factories for mocks (`makeReceipt`, `makeAction` in `bot/test/chain.test.ts`) or `as unknown as T` in a single helper (see `makeMockPublicClient`) — never `as any` at call sites.
 
 ## Key design decisions
 
