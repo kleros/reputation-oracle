@@ -63,3 +63,60 @@ describe("configSchema", () => {
 		consoleSpy.mockRestore();
 	});
 });
+
+describe("Betterstack config fields", () => {
+	it("accepts BETTERSTACK_SOURCE_TOKEN when present", () => {
+		const result = configSchema.safeParse({ ...validEnv, BETTERSTACK_SOURCE_TOKEN: "tok" });
+		expect(result.success).toBe(true);
+		if (result.success) {
+			expect(result.data.BETTERSTACK_SOURCE_TOKEN).toBe("tok");
+		}
+	});
+
+	it("accepts missing BETTERSTACK_SOURCE_TOKEN (undefined)", () => {
+		const result = configSchema.safeParse(validEnv);
+		expect(result.success).toBe(true);
+		if (result.success) {
+			expect(result.data.BETTERSTACK_SOURCE_TOKEN).toBeUndefined();
+		}
+	});
+
+	it("rejects BETTERSTACK_HEARTBEAT_URL when not a valid URL", () => {
+		const result = configSchema.safeParse({ ...validEnv, BETTERSTACK_HEARTBEAT_URL: "not-a-url" });
+		expect(result.success).toBe(false);
+	});
+
+	it("accepts BETTERSTACK_HEARTBEAT_URL when a valid URL", () => {
+		const result = configSchema.safeParse({
+			...validEnv,
+			BETTERSTACK_HEARTBEAT_URL: "https://uptime.betterstack.com/api/v1/heartbeat/abc123",
+		});
+		expect(result.success).toBe(true);
+		if (result.success) {
+			expect(result.data.BETTERSTACK_HEARTBEAT_URL).toBe(
+				"https://uptime.betterstack.com/api/v1/heartbeat/abc123",
+			);
+		}
+	});
+
+	it("defaults HEARTBEAT_TIMEOUT_MS to 10000 when absent", () => {
+		const result = configSchema.safeParse(validEnv);
+		expect(result.success).toBe(true);
+		if (result.success) {
+			expect(result.data.HEARTBEAT_TIMEOUT_MS).toBe(10000);
+		}
+	});
+
+	it("coerces HEARTBEAT_TIMEOUT_MS from string to number", () => {
+		const result = configSchema.safeParse({ ...validEnv, HEARTBEAT_TIMEOUT_MS: "5000" });
+		expect(result.success).toBe(true);
+		if (result.success) {
+			expect(result.data.HEARTBEAT_TIMEOUT_MS).toBe(5000);
+		}
+	});
+
+	it("rejects HEARTBEAT_TIMEOUT_MS when not positive (negative value)", () => {
+		const result = configSchema.safeParse({ ...validEnv, HEARTBEAT_TIMEOUT_MS: "-1" });
+		expect(result.success).toBe(false);
+	});
+});
