@@ -1,7 +1,7 @@
 # Phase 8: Observability - Context
 
 **Gathered:** 2026-04-23
-**Status:** Ready for planning (3 Claude's Discretion items flagged — revise before `/gsd:plan-phase 8` if needed)
+**Status:** Ready for planning — DISC-01/02/03 resolved by user on 2026-04-23 (see Claude's Discretion section)
 
 <domain>
 ## Phase Boundary
@@ -48,7 +48,7 @@ Out of scope: Mainnet RPC fallback (Phase 9 MAIN-07), Mainnet deployment (Phase 
   Semantics: awaits the multi-transport worker thread to drain buffered logs, then invokes `cb`. Internally wraps `pino.transport(...)` worker's async-end via `logger.flush()` + transport `.end()` (exact API shape to be confirmed by researcher against `@logtail/pino` + `pino.transport` v10 docs).
 - **D-15:** `bot/src/index.ts` `flushAndExit(code)` is updated to call `closeLogger(() => process.exit(code))` instead of `logger.flush(() => process.exit(code))`. Single point of change — all 6 existing `flushAndExit()` call sites remain identical.
 - **D-16:** `closeLogger` is **non-throwing** — any internal error during transport drain is caught and logged to `console.error` as a last-resort escape hatch, then `cb` is invoked regardless. Loss of buffered logs must never prevent bot exit.
-- **D-17:** Fallback timeout: if the transport worker does not drain within **2 seconds**, `closeLogger` invokes `cb` anyway. Prevents hung exits on a dead Betterstack endpoint. (Claude's Discretion — see Discretionary Items below.)
+- **D-17:** Fallback timeout: if the transport worker does not drain within **5000ms (5s)**, `closeLogger` invokes `cb` anyway. Prevents hung exits on a dead Betterstack endpoint. Chosen to prioritize not dropping end-of-run log lines on a slow/degraded network over faster systemd exit latency (user pick 2026-04-23, DISC-02).
 
 ### Uptime heartbeat (OBS-03, OBS-04)
 
@@ -56,7 +56,7 @@ Out of scope: Mainnet RPC fallback (Phase 9 MAIN-07), Mainnet deployment (Phase 
 - **D-19:** Success vs failure routing: if `summary.systemicFailure` is present, POST (or GET) to `${BETTERSTACK_HEARTBEAT_URL}/fail`; otherwise to `${BETTERSTACK_HEARTBEAT_URL}` (no suffix). Uses Betterstack Uptime's convention (researcher to confirm exact method and suffix in plan-phase).
 - **D-20:** Heartbeat HTTP method, timeout, and error handling implemented as a single helper function `sendHeartbeat(summary, config): Promise<void>` in a new file `bot/src/heartbeat.ts`. Uses native `fetch` with `AbortSignal.timeout(HEARTBEAT_TIMEOUT_MS)`. Any error — network, timeout, non-2xx response — is caught, logged at `warn` level (never `error`, to avoid cascading Betterstack's own error alerts), and swallowed. The function returns `Promise<void>` and never throws.
 - **D-21:** When `BETTERSTACK_HEARTBEAT_URL` is absent or `--dry-run` is active, `sendHeartbeat` is a no-op. Same conditional pattern as D-09. No "dry heartbeat" in dry-run mode.
-- **D-22:** Heartbeat timeout default: **5000ms**. Configurable via `HEARTBEAT_TIMEOUT_MS` env var with zod validation. (Claude's Discretion — see Discretionary Items below.)
+- **D-22:** Heartbeat timeout default: **10000ms (10s)**. Configurable via `HEARTBEAT_TIMEOUT_MS` env var with zod validation. Chosen for tolerance over aggressive failure — Betterstack's `in.logs.betterstack.com` ingest can occasionally exceed 5s under load; 10s keeps the heartbeat silent in that window rather than log-spamming warns (user pick 2026-04-23, DISC-01).
 - **D-23:** Heartbeat failure never cascades to `summary.systemicFailure` or the exit code — OBS-04 is a hard guarantee. A failed heartbeat is a monitoring-infra issue, not a bot-run issue.
 
 ### OBS-08 silent-list alert
@@ -70,7 +70,7 @@ Out of scope: Mainnet RPC fallback (Phase 9 MAIN-07), Mainnet deployment (Phase 
 - **D-27:** New env vars in `bot/src/config.ts`:
   - `BETTERSTACK_SOURCE_TOKEN`: `z.string().optional()` — when absent, Telemetry transport is skipped.
   - `BETTERSTACK_HEARTBEAT_URL`: `z.string().url().optional()` — when absent, heartbeat is skipped. Validated as URL shape when present.
-  - `HEARTBEAT_TIMEOUT_MS`: `z.coerce.number().int().positive().default(5000)` — bounded timeout for heartbeat fetch.
+  - `HEARTBEAT_TIMEOUT_MS`: `z.coerce.number().int().positive().default(10000)` — bounded timeout for heartbeat fetch (10s per D-22).
 - **D-28:** All three vars are added to `sepolia.env.example` (Phase 7 stub template) as commented placeholders. Phase 7's `deploy/bootstrap.sh` stub template gets the same three keys appended (update the heredoc in bootstrap to include them so fresh VPSs get the full placeholder set — backward compatible with already-deployed VPSs since they already have non-clobber protection per Phase 7 D-19).
 
 ### Test strategy
@@ -93,13 +93,12 @@ Out of scope: Mainnet RPC fallback (Phase 9 MAIN-07), Mainnet deployment (Phase 
   - `sendHeartbeat` is a no-op (D-21).
   - `closeLogger` still runs on exit (but only drains the stderr destination, which is synchronous).
 
-### Claude's Discretion
+### Claude's Discretion — resolved 2026-04-23
 
-Three items where I locked in a specific value/approach but would welcome the user overriding before `/gsd:plan-phase 8` runs:
-
-- **DISC-01:** Heartbeat HTTP timeout = **5000ms** (D-22). Options: 3000ms (aggressive, more likely to timeout during Betterstack degradation but exits faster), 5000ms (middle — recommended), 10000ms (more tolerant but delays exit on dead endpoint).
-- **DISC-02:** `closeLogger` fallback drain timeout = **2000ms** (D-17). Shorter = risks dropping end-of-run logs on slow networks; longer = delays systemd's view of process exit and next timer firing.
-- **DISC-03:** `RunSummary.items` → `itemsFetched` rename (D-25). Cleaner alignment with OBS-08 wording, but it's a breaking change to any downstream log-query that references `summary.items`. Since no such query exists yet (Phase 8 is where we introduce them), this is the right moment — but revert if the rename feels like churn.
+All three discretionary items picked by user on 2026-04-23:
+- **DISC-01 → 10000ms** (tolerant) — folded into D-22 and D-27.
+- **DISC-02 → 5000ms** — folded into D-17.
+- **DISC-03 → confirmed** — rename `RunSummary.items` → `itemsFetched` proceeds per D-25.
 
 </decisions>
 
