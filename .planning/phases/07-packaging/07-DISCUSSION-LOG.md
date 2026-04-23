@@ -127,6 +127,27 @@ Captured as:
 
 ---
 
+## Post-Write Correction — Circular Dependency (oracle user vs. chown)
+
+After CONTEXT.md was initially written, user caught a circular dependency in the initial runbook pattern:
+
+> "About the creation of the system user, isn't there a circular dependency because the bootstrap script lives inside the Git repository and the Git repository is supposed to live inside a folder owned by this system user? So we are supposed to git clone the repository in a place owned by the user that needs to be created by the script inside the repository."
+
+**The bug:** D-21 originally instructed the operator to run `sudo chown -R oracle:oracle /opt/reputation-oracle` *before* bootstrap. Since bootstrap creates the `oracle` user, the chown would fail with "invalid user" on every fresh VPS.
+
+**Resolution:** Operator never runs `chown`. Bootstrap handles it internally after creating the `oracle` user. Runbook becomes two commands:
+```bash
+sudo git clone https://github.com/… /opt/reputation-oracle
+cd /opt/reputation-oracle && sudo ./deploy/bootstrap.sh
+```
+
+**Edits applied:**
+- D-21 rewritten to remove operator-run `chown`; added explicit ordering note.
+- D-23 strengthened: step order is now labeled as load-bearing, with step 3 (useradd) explicitly gating steps 5, 6, 7.
+- `<specifics>` section appended with the ordering constraint and a note for planner/executor to preserve it when writing bootstrap.sh.
+
+---
+
 ## Claude's Discretion (captured in CONTEXT.md `<decisions>` §"Claude's Discretion")
 
 - D-36: sepolia.env stub template content (key ordering, comments) — align with existing `bot/.env.example`

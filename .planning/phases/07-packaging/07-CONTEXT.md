@@ -50,9 +50,27 @@ Out of scope: Betterstack wiring (Phase 8), Mainnet ERC-8004 wiring and RPC fall
 
 ### Bootstrap script shape
 - **D-20:** Single monolithic script: `deploy/bootstrap.sh`. Runs top-to-bottom with internal idempotency guards (`command -v node || install`, `id oracle || useradd`, `test -f ... || create`, `systemctl is-enabled ... || enable`). Re-runs are safe.
-- **D-21:** Operator clones the repo first, then runs bootstrap from inside the tree. Runbook pattern: `sudo git clone https://github.com/… /opt/reputation-oracle && sudo chown -R oracle:oracle /opt/reputation-oracle && cd /opt/reputation-oracle && sudo ./deploy/bootstrap.sh`. Bootstrap does NOT handle the initial clone. Rationale: conventional Linux ops; re-running after `git pull` is natural.
+- **D-21:** Operator clones the repo first, then runs bootstrap from inside the tree. Runbook pattern (two commands — operator does NOT `chown`, because the `oracle` user doesn't exist yet; bootstrap handles it internally after creating the user):
+  ```bash
+  sudo git clone https://github.com/… /opt/reputation-oracle        # clone as root, /opt/reputation-oracle owned root:root
+  cd /opt/reputation-oracle && sudo ./deploy/bootstrap.sh            # bootstrap creates oracle user, then chowns the tree
+  ```
+  Bootstrap does NOT handle the initial clone. Rationale: conventional Linux ops; re-running after `git pull` is natural. **Ordering note:** bootstrap's internal step order (D-23) is load-bearing — step 3 creates `oracle`, step 5 chowns the tree. Moving the operator chown outside bootstrap would create a circular dependency (operator can't chown to a user that doesn't exist yet).
 - **D-22:** `bootstrap.sh` is strict Bash: `#!/usr/bin/env bash`, `set -euo pipefail`. Step headers emitted to stderr (`>&2 echo "[bootstrap] Step N: ..."`). Trap-on-ERR reports the failing step and exits non-zero with a human-readable message.
-- **D-23:** Bootstrap covers, in order: (1) apt update + install prerequisites (git, curl, ca-certificates); (2) NodeSource Node 22 install; (3) create `oracle` system user; (4) create `/etc/reputation-oracle/` directory (mode 0755 owner root); (5) `chown -R oracle:oracle /opt/reputation-oracle`; (6) `cd bot && sudo -u oracle npm ci --omit=dev`; (7) create `/etc/reputation-oracle/sepolia.env` stub at 0600 with template comments (only if missing); (8) install systemd unit files to `/etc/systemd/system/`; (9) install journald drop-in; (10) `systemctl daemon-reload`; (11) `systemctl restart systemd-journald`. Bootstrap does NOT run `systemctl enable --now`.
+- **D-23:** Bootstrap covers, in this exact order (ordering is load-bearing — step 3 MUST run before any step that references `oracle`):
+  1. `apt update` + install prerequisites (git, curl, ca-certificates).
+  2. NodeSource Node 22 install (idempotent — skip if `node --version` starts with `v22`).
+  3. **Create `oracle` system user** idempotently (`id oracle &>/dev/null || useradd --system --no-create-home --shell /usr/sbin/nologin oracle`). MUST happen before step 5, 6, 7 — those all reference `oracle`.
+  4. Create `/etc/reputation-oracle/` directory (mode 0755, owner root:root — not oracle; the directory is root-owned, only the env file inside is oracle-owned).
+  5. `chown -R oracle:oracle /opt/reputation-oracle` — transfers the clone from root (post-`sudo git clone`) to `oracle`. Depends on step 3 existing the user.
+  6. `cd /opt/reputation-oracle/bot && sudo -u oracle npm ci --omit=dev` — installs prod deps (including `tsx` after D-04 promotion) into `bot/node_modules/` owned by `oracle`. Depends on step 5 making `bot/` writable by `oracle`.
+  7. Create `/etc/reputation-oracle/sepolia.env` stub at 0600 owned `oracle:oracle`, only if missing (never clobber — D-19). `install -m 0600 -o oracle -g oracle /dev/null /etc/reputation-oracle/sepolia.env`, then append heredoc template.
+  8. Install systemd unit files: `cp deploy/systemd/reputation-oracle@.service /etc/systemd/system/` + same for `.timer`.
+  9. Install journald drop-in: `cp deploy/journald.conf.d/reputation-oracle.conf /etc/systemd/journald.conf.d/`.
+  10. `systemctl daemon-reload`.
+  11. `systemctl restart systemd-journald` (applies the retention caps).
+
+  Bootstrap does NOT run `systemctl enable --now` (D-24).
 - **D-24:** Bootstrap does NOT enable or start the timer. Operator explicitly runs `sudo ./deploy/start-timer.sh sepolia` (convenience helper) or `sudo systemctl enable --now reputation-oracle@sepolia.timer` after filling secrets and validating with `--dry-run`. Safer: prevents the first cycle firing against empty/bogus env.
 
 ### journald retention
@@ -164,6 +182,7 @@ Out of scope: Betterstack wiring (Phase 8), Mainnet ERC-8004 wiring and RPC fall
 - Prefer a script over a Markdown runbook for the update flow — same philosophy applies to repeatable ops actions: scripts > docs when the sequence is short and the failure modes matter (user directive).
 - Keep hardening directives at the PKG-05 minimum in v1.2 — do not add `MemoryMax`/`CPUQuota`/`ProtectHome`/`ReadWritePaths` speculatively. Can revisit in a later milestone if the bot grows (user directive).
 - Install-but-don't-start-timer pattern: bootstrap finishes with the timer disabled; operator gets one explicit moment to validate dry-run before enabling (user directive, matches first-run-verification pitfall P2-05 mitigation).
+- **Ordering constraint, caught by user during discussion:** The `oracle` user does not exist on a fresh VPS. Any step that references `oracle` (chown, `sudo -u oracle`, `install -o oracle`) MUST come after the useradd step. The initial runbook draft had the operator running `chown -R oracle:oracle` before bootstrap created the user — that would have failed with "invalid user" on every fresh VPS install. Resolution: operator never chowns; bootstrap does it internally after creating the user (see D-21 and D-23 step 5). Planner + executor must preserve this ordering when writing bootstrap.sh.
 
 </specifics>
 
