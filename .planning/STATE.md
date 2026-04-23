@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Deploy-to-Mainnet
-status: verifying
-stopped_at: "Completed 07-06-PLAN.md (checkpoint:human-verify pending)"
+status: awaiting_human_uat
+stopped_at: "Phase 07 — 10/10 codebase must-haves verified; awaiting live-VPS acceptance (07-HUMAN-UAT.md)"
 last_updated: "2026-04-23T17:06:19.023Z"
 last_activity: 2026-04-23
 progress:
@@ -28,10 +28,10 @@ See: .planning/PROJECT.md (updated 2026-04-23 after v1.2 milestone kickoff)
 Milestone: v1.2 — Deploy-to-Mainnet
 Phase: 07 (packaging) — EXECUTING
 Plan: 6 of 6
-Status: Phase complete — ready for verification
+Status: Codebase complete — awaiting live-VPS acceptance (07-HUMAN-UAT.md)
 Last activity: 2026-04-23
 
-Progress: [░░░░░░░░░░░░░░░░░░░░] 0%
+Progress: [████████████████████] 100% (code) · 0% (live-VPS UAT)
 
 ## Performance Metrics
 
@@ -122,5 +122,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-23T17:06:19.019Z
-Stopped at: Completed 07-06-PLAN.md (checkpoint:human-verify pending)
-Resume hint: `/gsd:plan-phase 7` to start packaging plans
+Stopped at: Phase 07 codebase deliverables complete; awaiting live-VPS acceptance per 07-HUMAN-UAT.md (deploy/ACCEPTANCE.md is the operator checklist)
+Resume hint: run `deploy/ACCEPTANCE.md` on the Sepolia VPS, then `/gsd:verify-work 7` to close the 5 UAT items and mark Phase 7 complete

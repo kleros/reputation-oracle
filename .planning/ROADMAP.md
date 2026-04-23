@@ -42,7 +42,7 @@ Standalone dependency-maintenance phase, not tied to a milestone. Completed betw
 
 ### 🚧 v1.2 — Deploy-to-Mainnet (Phases 7-9)
 
-- [x] **Phase 7: Packaging** — systemd runtime, idempotent bootstrap, tsx devDep fix, Sepolia VPS acceptance (completed 2026-04-23)
+- [ ] **Phase 7: Packaging** — systemd runtime, idempotent bootstrap, tsx devDep fix, Sepolia VPS acceptance _(codebase deliverables complete 2026-04-23; 10/10 must-haves verified; awaiting live-VPS acceptance — see [`.planning/phases/07-packaging/07-HUMAN-UAT.md`](phases/07-packaging/07-HUMAN-UAT.md))_
 - [ ] **Phase 8: Observability** — Betterstack Telemetry + Uptime, runId/chainId, closeLogger, 7-day burn-in gate
 - [ ] **Phase 9: Mainnet Cutover** — Router deploy on Mainnet, Identity registration, Mainnet systemd unit, go-live
 
