@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Deploy-to-Mainnet
 status: completed
-stopped_at: Phase 07 complete (2026-04-23) — live-VPS acceptance deferred to operator at provisioning time; ready to begin Phase 08 (Observability)
-last_updated: "2026-04-23T18:17:32.652Z"
+stopped_at: Phase 08 context gathered non-interactively (Telegram MCP disconnect); 3 DISC items flagged for user review before plan-phase
+last_updated: "2026-04-23T18:45:11.399Z"
 last_activity: 2026-04-23
 progress:
   total_phases: 3
@@ -122,6 +122,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-23T17:06:19.019Z
-Stopped at: Phase 07 codebase deliverables complete; awaiting live-VPS acceptance per 07-HUMAN-UAT.md (deploy/ACCEPTANCE.md is the operator checklist)
+Last session: 2026-04-23T18:45:11.395Z
+Stopped at: Phase 08 context gathered non-interactively (Telegram MCP disconnect); 3 DISC items flagged for user review before plan-phase
 Resume hint: run `deploy/ACCEPTANCE.md` on the Sepolia VPS, then `/gsd:verify-work 7` to close the 5 UAT items and mark Phase 7 complete
