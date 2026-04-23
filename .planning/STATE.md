@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Deploy-to-Mainnet
 status: executing
-stopped_at: Phase 08 context gathered non-interactively (Telegram MCP disconnect); 3 DISC items flagged for user review before plan-phase
-last_updated: "2026-04-23T22:55:00.000Z"
-last_activity: 2026-04-23 -- Quick task 260423-wzl — Phase 7 deploy issue fixes
+stopped_at: Phase 07 fully closed (code + live-VPS UAT 5/5); Phase 08 code complete awaiting 7-day Sepolia Betterstack burn-in per RUNBOOK §10
+last_updated: "2026-04-23T23:20:00.000Z"
+last_activity: 2026-04-23 -- Phase 7 live-VPS UAT 5/5 pass; quick-task 260423-wzl deploy fixes
 progress:
   total_phases: 3
   completed_phases: 2
@@ -21,17 +21,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-23 after v1.2 milestone kickoff)
 
 **Core value:** Kleros-backed, economically-secured reputation signals for ERC-8004 AI agents
-**Current focus:** Phase 08 — observability
+**Current focus:** Phase 08 — observability (code complete; Betterstack burn-in pending)
 
 ## Current Position
 
 Milestone: v1.2 — Deploy-to-Mainnet
-Phase: 08 (observability) — EXECUTING
-Plan: 1 of 6
-Status: Executing Phase 08
-Last activity: 2026-04-23
+Phase: 07 COMPLETE (code + live-VPS UAT 5/5 passed 2026-04-23); Phase 08 code complete, live-Betterstack UAT pending
+Plan: Phase 08 — 6/6 plans done; 4 live-infra items in 08-HUMAN-UAT
+Status: Awaiting Betterstack burn-in (7-day) then Phase 9 Mainnet
+Last activity: 2026-04-23 — Phase 7 live-VPS UAT complete (5/5 pass); quick-task 260423-wzl deploy fixes shipped
 
-Progress: [████████████████████] 100% (code) · deferred (live-VPS UAT)
+Progress: [████████████████████] 100% (Phase 7 fully closed)
 
 ## Performance Metrics
 
@@ -98,7 +98,7 @@ Items acknowledged and deferred at v1.1 milestone close on 2026-04-22:
 | code-review | IN-02 `parseInt(disputeId)` precision loss above 2^53 | Theoretical — Kleros dispute counts far below this; deferred to v1.3 |
 | requirement | PROD-02 monitoring integration | Addressed in v1.2 Phase 8 (OBS-01..OBS-08) |
 | requirement | PROD-03 key rotation + Pausable contract upgrade | Deferred to v1.3 |
-| uat | Phase 07 live-VPS acceptance (5 items: bootstrap E2E, systemd timer firing, secrets-not-exposed via `systemctl show`, PKG-08 dry-run on live VPS, journald retention active) | Deferred 2026-04-23 — operator executes `deploy/ACCEPTANCE.md` at VPS provisioning time; tracking file `.planning/phases/07-packaging/07-HUMAN-UAT.md` (status: deferred) |
+| uat | Phase 07 live-VPS acceptance (5 items: bootstrap E2E, systemd timer firing, secrets-not-exposed via `systemctl show`, PKG-08 dry-run on live VPS, journald retention active) | ✓ Resolved 2026-04-23 — 5/5 passed on live Sepolia VPS; 4 deploy fixes captured in quick task 260423-wzl (commits 0ed9f2a, 7798127) |
 
 ### Pending Todos
 
@@ -124,6 +124,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-23T18:45:11.395Z
-Stopped at: Phase 08 context gathered non-interactively (Telegram MCP disconnect); 3 DISC items flagged for user review before plan-phase
-Resume hint: run `deploy/ACCEPTANCE.md` on the Sepolia VPS, then `/gsd:verify-work 7` to close the 5 UAT items and mark Phase 7 complete
+Last session: 2026-04-23T23:20:00Z
+Stopped at: Phase 07 live-VPS UAT complete (5/5 pass); Phase 08 code complete (6/6 plans + code-review fixes); awaiting 7-day Sepolia Betterstack burn-in per RUNBOOK §10 before Phase 09 Mainnet
+Resume hint: Set `BETTERSTACK_SOURCE_TOKEN`/`BETTERSTACK_HEARTBEAT_URL`/`HEARTBEAT_TIMEOUT_MS` in `/etc/reputation-oracle/sepolia.env` on the VPS; pull latest master (includes WR-01/WR-02 fixes + wzl deploy fixes); restart timer; track B-01..B-05 daily; when 7 days pass, `/gsd:verify-work 8` to close 08-HUMAN-UAT and unblock Phase 09
