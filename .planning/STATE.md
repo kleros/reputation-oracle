@@ -98,7 +98,7 @@ None.
 | 260423-2ev | fix IN-01 — remove dead `?? 30_000` fallback on PINATA_TIMEOUT_MS at bot/src/chain.ts:228 | 2026-04-23 | 3e8b106 | Complete | [260423-2ev-fix-in-01](./quick/260423-2ev-fix-in-01/) |
 | 260423-nw1 | Add Stop hook for end-of-turn linting across bot and contracts | 2026-04-23 | ac1e746 | Complete | [260423-nw1-add-stop-hook-for-end-of-turn-linting-ac](./quick/260423-nw1-add-stop-hook-for-end-of-turn-linting-ac/) |
 | 260423-o3o | Auto-fix pre-existing lint drift surfaced by Stop hook (biome safe fixes + forge fmt) | 2026-04-23 | f863bc9 | Complete | [260423-o3o-auto-fix-pre-existing-lint-drift-surface](./quick/260423-o3o-auto-fix-pre-existing-lint-drift-surface/) |
-| 260423-o9o | Clear trivial Biome warnings — dead import, biome-ignore comments with rationale, template literals | 2026-04-23 | _pending_ | Complete | [260423-o9o-clear-trivial-biome-warnings-dead-import](./quick/260423-o9o-clear-trivial-biome-warnings-dead-import/) |
+| 260423-o9o | Clear trivial Biome warnings — dead import, biome-ignore comments with rationale, template literals | 2026-04-23 | 0ad4584 | Complete | [260423-o9o-clear-trivial-biome-warnings-dead-import](./quick/260423-o9o-clear-trivial-biome-warnings-dead-import/) |
 
 ## Session Continuity
 
