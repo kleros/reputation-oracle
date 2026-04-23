@@ -160,6 +160,7 @@ async function main(): Promise<void> {
 		return; // unreachable
 	} catch (error) {
 		summary.errors = 1;
+		summary.systemicFailure = "unhandled_exception"; // WR-01: route to /fail, not healthy URL
 		emitSummary(summary, startTime);
 		if (config) await sendHeartbeat(summary, config); // D-18; T-08-14: config may be undefined if loadConfig() threw
 		logger.error({ err: error }, "Bot failed");
