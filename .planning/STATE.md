@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Deploy-to-Mainnet
-status: awaiting_human_uat
-stopped_at: "Phase 07 — 10/10 codebase must-haves verified; awaiting live-VPS acceptance (07-HUMAN-UAT.md)"
-last_updated: "2026-04-23T17:06:19.023Z"
+status: completed
+stopped_at: Phase 07 codebase deliverables complete; awaiting live-VPS acceptance per 07-HUMAN-UAT.md (deploy/ACCEPTANCE.md is the operator checklist)
+last_updated: "2026-04-23T18:17:32.652Z"
 last_activity: 2026-04-23
 progress:
   total_phases: 3
