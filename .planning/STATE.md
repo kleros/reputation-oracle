@@ -60,7 +60,8 @@ Items acknowledged and deferred at v1.1 milestone close on 2026-04-22:
 
 | Category | Item | Status |
 |----------|------|--------|
-| security | 06-SECURITY.md threat-mitigation audit | Not run — security_enforcement=true gate bypassed |
+| security | 06-SECURITY.md threat-mitigation audit | ✓ Resolved 2026-04-23 — 20/20 threats closed (commit ce3b85b) |
+| uat | 06-UAT user acceptance testing | ✓ Resolved 2026-04-23 — 5 passed, 0 issues, 1 skipped (commit 32504bc) |
 | audit | v1.1-MILESTONE-AUDIT.md | Not run before close |
 | code-review | IN-01 dead `?? 30_000` fallback in chain.ts | Advisory only, no runtime impact |
 | code-review | IN-02 `parseInt(disputeId)` precision loss above 2^53 | Theoretical — Kleros dispute counts far below this |
