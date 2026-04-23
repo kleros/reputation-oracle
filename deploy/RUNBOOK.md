@@ -304,17 +304,34 @@ Create an alert in Betterstack Telemetry to detect silent list-misconfiguration 
 
 1. In Betterstack Logs → **Alerts** → **New alert**
 2. Alert type: **Threshold**
-3. ClickHouse SQL query:
+3. ClickHouse SQL query (time-series shape — alert engine requires X=time, Y=value):
    ```sql
-   SELECT count()
-   FROM remote(t<source_id>_your_source_logs)
+   SELECT {{time}} AS time, count() AS value
+   FROM {{source}}
    WHERE JSONExtract(raw, 'summary.itemsFetched', 'Nullable(Int64)') = 0
-     AND {{time}}
+     AND dt BETWEEN {{start_time}} AND {{end_time}}
+   GROUP BY time
+   ORDER BY time
    ```
-   Replace `<source_id>` with your source ID (visible in Betterstack → Sources → [source name] → Settings).
+   `{{source}}` expands to the selected source's table; `{{start_time}}`/`{{end_time}}` bind to the alert's time window; `{{time}}` is a bucketing expression (use in `SELECT`/`GROUP BY` only — it errors in `WHERE` with `Illegal type (DateTime('UTC')) ... toStartOfInterval`).
    > **Note:** If the query returns no results after live runs, the field path may differ. Try `raw LIKE '%itemsFetched%'` to confirm field is present, then adjust the JSONExtract path.
-4. Threshold: >= **5** (five runs with 0 items fetched — D-24 revised threshold at 5-min cadence)
-5. Confirmation period: **25 minutes** (5 runs x 5 min cadence)
+4. Chart panel (Visualization → Data tab):
+   - X-axis column: `time`
+   - X-axis type: `Time series`
+   - Y-axis columns: `value`
+   - Data series column: leave blank
+5. Alert parameters (expresses "5 consecutive empty runs" via `Confirmation period`):
+
+   | Field | Value | Why |
+   |-------|-------|-----|
+   | Detection method | Threshold | — |
+   | Alert when | `any series is higher than 0` | ≥1 zero-run in the bucket |
+   | Run this alert | every 5 minutes | matches bot cadence |
+   | on data from | the last 5 minutes | one run's bucket at a time |
+   | Confirmation period | 25 minutes | 5 consecutive in-breach evaluations ≈ 5 empty runs (D-24) |
+   | Recovery period | Immediately | recover on first non-empty run |
+
+   Each `{{time}}` bucket caps at 1 zero-run (bot emits 1 RunSummary per run), so threshold `> 0` is correct — do NOT use `>= 5` on the bucket value. The 5-consecutive semantics are enforced by `Confirmation period`, not by the threshold value.
 6. Alert channel: email (PagerDuty/Slack deferred to v1.3)
 7. Mute during burn-in (see §10)
 
