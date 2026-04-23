@@ -11,10 +11,10 @@ v1.2 adds no new business logic. Goal: package the bot for VPS operation on Sepo
 
 - [ ] **PKG-01**: Bot runs on fresh Ubuntu 24.04 VPS via a single idempotent `bootstrap.sh` (NodeSource Node 22, dedicated `oracle` user, `/opt/reputation-oracle`, `npm ci --omit=dev`)
 - [x] **PKG-02**: Bot runs via `node --import tsx src/index.ts` with `tsx` moved to `dependencies` in `bot/package.json` (prevents `npm ci --omit=dev` break)
-- [ ] **PKG-03**: Sepolia instance scheduled via systemd instance template `reputation-oracle@sepolia.timer` (15-min monotonic interval, `Persistent=true`, `RandomizedDelaySec=60`)
-- [ ] **PKG-04**: Secrets delivered via `/etc/reputation-oracle/sepolia.env` at mode 0600 owned by the dedicated service account; never via inline `Environment=` directives
-- [ ] **PKG-05**: systemd hardening directives applied (`ProtectSystem=strict`, `PrivateTmp=true`, `NoNewPrivileges=true`, `TimeoutStartSec=300`, no `Restart=`)
-- [ ] **PKG-06**: journald retention capped (`SystemMaxUse=500M`, `SystemMaxFileSize=50M`) to prevent silent log drops during incident
+- [x] **PKG-03**: Sepolia instance scheduled via systemd instance template `reputation-oracle@sepolia.timer` (15-min monotonic interval, `Persistent=true`, `RandomizedDelaySec=60`)
+- [x] **PKG-04**: Secrets delivered via `/etc/reputation-oracle/sepolia.env` at mode 0600 owned by the dedicated service account; never via inline `Environment=` directives
+- [x] **PKG-05**: systemd hardening directives applied (`ProtectSystem=strict`, `PrivateTmp=true`, `NoNewPrivileges=true`, `TimeoutStartSec=300`, no `Restart=`)
+- [x] **PKG-06**: journald retention capped (`SystemMaxUse=500M`, `SystemMaxFileSize=50M`) to prevent silent log drops during incident
 - [ ] **PKG-07**: Atomic-update runbook documented (stop timer → git pull → `npm ci` → start timer) with no secret-file overwrites
 - [ ] **PKG-08**: VPS deployment acceptance test: `--dry-run` invocation succeeds and emits a valid `RunSummary` after `npm ci --omit=dev`
 
@@ -85,10 +85,10 @@ Maps each requirement to a phase. Updated during roadmap creation.
 |-------------|-------|--------|
 | PKG-01 | Phase 7 | Pending |
 | PKG-02 | Phase 7 | Complete |
-| PKG-03 | Phase 7 | Pending |
-| PKG-04 | Phase 7 | Pending |
-| PKG-05 | Phase 7 | Pending |
-| PKG-06 | Phase 7 | Pending |
+| PKG-03 | Phase 7 | Complete |
+| PKG-04 | Phase 7 | Complete |
+| PKG-05 | Phase 7 | Complete |
+| PKG-06 | Phase 7 | Complete |
 | PKG-07 | Phase 7 | Pending |
 | PKG-08 | Phase 7 | Pending |
 | OBS-01 | Phase 8 | Pending |

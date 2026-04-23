@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Deploy-to-Mainnet
 status: executing
-stopped_at: Completed 07-01-PLAN.md
-last_updated: "2026-04-23T16:51:26.625Z"
+stopped_at: Completed 07-02-PLAN.md
+last_updated: "2026-04-23T16:53:40.484Z"
 last_activity: 2026-04-23
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 6
-  completed_plans: 1
-  percent: 17
+  completed_plans: 2
+  percent: 33
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-04-23 after v1.2 milestone kickoff)
 
 Milestone: v1.2 — Deploy-to-Mainnet
 Phase: 07 (packaging) — EXECUTING
-Plan: 2 of 6
+Plan: 3 of 6
 Status: Ready to execute
 Last activity: 2026-04-23
 
@@ -49,6 +49,7 @@ Progress: [░░░░░░░░░░░░░░░░░░░░] 0%
 | 05-transaction-safety | 4 | 2026-04-21 |
 | 06-ipfs-evidence | 5 | 2026-04-22 |
 | Phase 07-packaging P01 | 4m | 2 tasks | 2 files |
+| Phase 07-packaging P02 | 87s | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -67,6 +68,8 @@ All v1.1 decisions logged in PROJECT.md Key Decisions table. Archive in `.planni
 - Mainnet signer = fresh keypair, never reused from Sepolia
 - 7-day Sepolia burn-in gate: Betterstack Uptime must show 7+ clean heartbeats before Mainnet timer enabled
 - [Phase 07-packaging]: tsx promoted to dependencies (not devDependencies) — npm ci --omit=dev would silently drop it otherwise (P1-02, D-04)
+- [Phase 07-packaging]: Type=oneshot with no Restart= — timer is retry mechanism; Restart=on-failure would thrash on 429s (D-14, P1-03)
+- [Phase 07-packaging]: Exactly 4 hardening directives per D-15: ProtectSystem=strict, PrivateTmp=true, NoNewPrivileges=true, TimeoutStartSec=300 — no speculative extras
 
 ### Deferred Items
 
@@ -105,6 +108,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-23T16:51:26.622Z
-Stopped at: Completed 07-01-PLAN.md
+Last session: 2026-04-23T16:53:40.481Z
+Stopped at: Completed 07-02-PLAN.md
 Resume hint: `/gsd:plan-phase 7` to start packaging plans
