@@ -1,6 +1,6 @@
 # Kleros Reputation Oracle — Operator Runbook
 
-**Target:** Ubuntu 24.04 VPS, Node 22 via NodeSource, systemd timer scheduling
+**Target:** Ubuntu 22.04 VPS, Node 22 via NodeSource, systemd timer scheduling
 **Managed via:** `deploy/bootstrap.sh` (install), `deploy/update.sh` (updates), `deploy/start-timer.sh` (enable)
 
 ---
@@ -22,7 +22,7 @@
 
 ## 1. Fresh VPS Install
 
-**Prerequisites:** Ubuntu 24.04 VPS, SSH access as root or sudo user.
+**Prerequisites:** Ubuntu 22.04 VPS, SSH access as root or sudo user.
 
 **Two commands to a running-ready oracle:**
 

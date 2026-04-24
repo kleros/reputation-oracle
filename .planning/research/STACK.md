@@ -12,11 +12,11 @@ See `.planning/milestones/v1.1-research/STACK.md`. Everything below is additive.
 
 ---
 
-## 1. Packaging — Node 22 on Ubuntu 24.04
+## 1. Packaging — Node 22 on Ubuntu 22.04
 
 ### Node.js provisioning decision: NodeSource apt repo
 
-Ubuntu 24.04 ships Node.js 18 in its default apt. **Do not use the distro package.**
+Ubuntu 22.04 ships Node.js 12 in its default apt. **Do not use the distro package.**
 
 | Option | Verdict | Reason |
 |--------|---------|--------|
@@ -61,7 +61,7 @@ EnvironmentFile=/etc/reputation-oracle/env
 
 ExecStart=/usr/bin/node --env-file=/etc/reputation-oracle/env --import tsx src/index.ts
 
-# Sandboxing (systemd 255+, Ubuntu 24.04 ships 255.4)
+# Sandboxing (systemd 245+, Ubuntu 22.04 ships 249)
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
@@ -112,7 +112,7 @@ WantedBy=timers.target
 sudo useradd --system --no-create-home --shell /usr/sbin/nologin oracle
 ```
 
-**systemd version context:** Ubuntu 24.04 ships systemd 255.4. All directives above are available in systemd 245+. `systemd.exec(5)`, `systemd.timer(5)` are the authoritative references.
+**systemd version context:** Ubuntu 22.04 ships systemd 249. All directives above are available in systemd 245+. `systemd.exec(5)`, `systemd.timer(5)` are the authoritative references.
 
 **Confidence:** HIGH — standard systemd patterns; no experimental features used.
 
@@ -153,7 +153,7 @@ sudo chown root:root /etc/reputation-oracle/env
 
 ### journald retention config
 
-Ubuntu 24.04 enables persistent journald storage by default but sets **no size cap** — journals grow unbounded. Set explicit limits in `/etc/systemd/journald.conf`:
+Ubuntu 22.04 enables persistent journald storage by default but sets **no size cap** — journals grow unbounded. Set explicit limits in `/etc/systemd/journald.conf`:
 
 ```ini
 [Journal]
@@ -401,13 +401,13 @@ npm install @logtail/pino
 | `@logtail/pino@^0.5.8` | pino ≥ 7.0.0 peer dep | Compatible with pino 10.3.x (v10 > v7) |
 | pino v10 `transport()` API | stable since pino v7 | No breaking changes for transport API in v10 |
 | Node 22 `AbortSignal.timeout()` | Node 20.3+ | Available — used in heartbeat ping |
-| systemd 255.4 (Ubuntu 24.04) | all directives require systemd 245+ | All directives available |
+| systemd 249 (Ubuntu 22.04) | all directives require systemd 245+ | All directives available |
 
 ---
 
 ## Sources
 
-- [NodeSource setup guide (computingforgeeks.com)](https://computingforgeeks.com/install-nodejs-ubuntu-debian/) — Node 22 on Ubuntu 24.04; NodeSource apt method
+- [NodeSource setup guide (computingforgeeks.com)](https://computingforgeeks.com/install-nodejs-ubuntu-debian/) — Node 22 on Ubuntu 22.04; NodeSource apt method
 - [Betterstack pino transport docs](https://betterstack.com/docs/logs/javascript/pino/) — `@logtail/pino` package, transport config, source token
 - [@logtail/pino on npmjs.com](https://www.npmjs.com/package/@logtail/pino) — v0.5.8, weekly downloads, peer deps
 - [Betterstack Uptime heartbeat docs](https://betterstack.com/docs/uptime/cron-and-heartbeat-monitor/) — URL format, exit code support, grace period
@@ -418,7 +418,7 @@ npm install @logtail/pino
 - [systemd/Sandboxing ArchWiki](https://wiki.archlinux.org/title/Systemd/Sandboxing) — ProtectSystem, PrivateTmp, NoNewPrivileges
 - [systemd EnvironmentFile Ubuntu guide](https://oneuptime.com/blog/post/2026-03-02-how-to-configure-systemd-service-environment-files-on-ubuntu/view) — EnvironmentFile best practices
 - [systemd credentials (LoadCredential)](https://systemd.io/CREDENTIALS/) — comparison with EnvironmentFile, security tradeoffs
-- [journald log rotation Ubuntu 24.04](https://ubuntuhandbook.org/index.php/2020/12/clear-systemd-journal-logs-ubuntu/) — SystemMaxUse defaults
+- [journald log rotation Ubuntu 22.04](https://ubuntuhandbook.org/index.php/2020/12/clear-systemd-journal-logs-ubuntu/) — SystemMaxUse defaults
 
 ---
 *Stack research for: Kleros Reputation Oracle v1.2 Deploy-to-Mainnet*

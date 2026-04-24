@@ -49,7 +49,7 @@ Standalone dependency-maintenance phase, not tied to a milestone. Completed betw
 ## Phase Details
 
 ### Phase 7: Packaging
-**Goal**: Bot runs reliably on a fresh Ubuntu 24.04 VPS via a single idempotent bootstrap script with systemd scheduling and hardened secrets handling
+**Goal**: Bot runs reliably on a fresh Ubuntu 22.04 VPS via a single idempotent bootstrap script with systemd scheduling and hardened secrets handling
 **Depends on**: Nothing (builds on shipped v1.1 bot code; no bot logic changes)
 **Requirements**: PKG-01, PKG-02, PKG-03, PKG-04, PKG-05, PKG-06, PKG-07, PKG-08
 **Success Criteria** (what must be TRUE):

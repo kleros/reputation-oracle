@@ -2,7 +2,7 @@
 # deploy/bootstrap.sh — Idempotent VPS provisioner for Kleros Reputation Oracle
 # Usage: sudo ./deploy/bootstrap.sh
 # Must be run from /opt/reputation-oracle (the repo root).
-# Assumptions: fresh Ubuntu 24.04 VPS; repo already cloned to /opt/reputation-oracle by root.
+# Assumptions: fresh Ubuntu 22.04 VPS; repo already cloned to /opt/reputation-oracle by root.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

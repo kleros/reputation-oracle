@@ -9,7 +9,7 @@ v1.2 adds no new business logic. Goal: package the bot for VPS operation on Sepo
 
 ### Packaging
 
-- [x] **PKG-01**: Bot runs on fresh Ubuntu 24.04 VPS via a single idempotent `bootstrap.sh` (NodeSource Node 22, dedicated `oracle` user, `/opt/reputation-oracle`, `npm ci --omit=dev`)
+- [x] **PKG-01**: Bot runs on fresh Ubuntu 22.04 VPS via a single idempotent `bootstrap.sh` (NodeSource Node 22, dedicated `oracle` user, `/opt/reputation-oracle`, `npm ci --omit=dev`)
 - [x] **PKG-02**: Bot runs via `node --import tsx src/index.ts` with `tsx` moved to `dependencies` in `bot/package.json` (prevents `npm ci --omit=dev` break)
 - [x] **PKG-03**: Sepolia instance scheduled via systemd instance template `reputation-oracle@sepolia.timer` (5-min monotonic interval, `Persistent=true`, `RandomizedDelaySec=60`) — cadence revised 2026-04-23 from 15→5min for fresher reputation signals
 - [x] **PKG-04**: Secrets delivered via `/etc/reputation-oracle/sepolia.env` at mode 0600 owned by the dedicated service account; never via inline `Environment=` directives

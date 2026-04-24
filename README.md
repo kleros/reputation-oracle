@@ -90,7 +90,7 @@ npm run start
 
 ## Deployment
 
-The bot runs on Ubuntu 24.04 via a systemd timer. A single idempotent bootstrap script provisions a fresh VPS in under 10 minutes.
+The bot runs on Ubuntu 22.04 via a systemd timer. A single idempotent bootstrap script provisions a fresh VPS in under 10 minutes.
 
 **Quick start:**
 ```bash
