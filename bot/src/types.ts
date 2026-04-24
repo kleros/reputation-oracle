@@ -50,6 +50,7 @@ export interface EvidenceJson {
 	valueDecimals: number;
 	tag1: string;
 	tag2: string;
+	text: string;
 	kleros: {
 		pgtcrAddress: string;
 		pgtcrItemId: string;

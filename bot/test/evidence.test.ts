@@ -34,6 +34,13 @@ describe("buildPositiveEvidence", () => {
 		expect(evidence.kleros.disputeId).toBeNull();
 		expect(evidence.kleros.ruling).toBeNull();
 	});
+
+	it("includes human-readable text field", () => {
+		const evidence = buildPositiveEvidence(baseParams);
+		expect(evidence.text).toBe(
+			"Agent 42 is actively collateralized in the Kleros Verified Agents Registry (0x3162df9669affa8b6b6ff2147afa052249f00447) with 0.002 WETH staked. No active disputes.",
+		);
+	});
 });
 
 describe("buildNegativeEvidence", () => {
@@ -47,6 +54,23 @@ describe("buildNegativeEvidence", () => {
 		expect(evidence.tag2).toBe("kleros-agent-registry");
 		expect(evidence.kleros.disputeId).toBe(1234);
 		expect(evidence.kleros.ruling).toBe(2);
+	});
+
+	it("includes human-readable text field with dispute info", () => {
+		const evidence = buildNegativeEvidence({
+			...baseParams,
+			disputeId: "1234",
+		});
+		expect(evidence.text).toBe(
+			"Agent 42 was removed from the Kleros Verified Agents Registry (0x3162df9669affa8b6b6ff2147afa052249f00447) after Kleros dispute #1234. Challenger prevailed.",
+		);
+	});
+
+	it("uses short form when disputeId is null", () => {
+		const evidence = buildNegativeEvidence({ ...baseParams, disputeId: null });
+		expect(evidence.text).toBe(
+			"Agent 42 was removed from the Kleros Verified Agents Registry (0x3162df9669affa8b6b6ff2147afa052249f00447).",
+		);
 	});
 });
 

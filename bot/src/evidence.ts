@@ -20,6 +20,7 @@ interface NegativeEvidenceParams extends EvidenceParams {
  * tag1 = "verified", value = 95
  */
 export function buildPositiveEvidence(params: EvidenceParams): EvidenceJson {
+	const text = `Agent ${params.agentId.toString()} is actively collateralized in the Kleros Verified Agents Registry (${params.pgtcrAddress}) with ${formatStake(params.stake)} WETH staked. No active disputes.`;
 	return {
 		schema: "kleros-reputation-oracle/v1",
 		agentRegistry: `eip155:${params.chainId}:${AGENT_REGISTRY_ADDRESS}`,
@@ -30,6 +31,7 @@ export function buildPositiveEvidence(params: EvidenceParams): EvidenceJson {
 		valueDecimals: 0,
 		tag1: "verified",
 		tag2: "kleros-agent-registry",
+		text,
 		kleros: {
 			pgtcrAddress: params.pgtcrAddress,
 			pgtcrItemId: params.pgtcrItemId,
@@ -47,6 +49,9 @@ export function buildPositiveEvidence(params: EvidenceParams): EvidenceJson {
  */
 export function buildNegativeEvidence(params: NegativeEvidenceParams): EvidenceJson {
 	const disputeIdNum = params.disputeId ? Number.parseInt(params.disputeId, 10) : null;
+	const text = params.disputeId
+		? `Agent ${params.agentId.toString()} was removed from the Kleros Verified Agents Registry (${params.pgtcrAddress}) after Kleros dispute #${params.disputeId}. Challenger prevailed.`
+		: `Agent ${params.agentId.toString()} was removed from the Kleros Verified Agents Registry (${params.pgtcrAddress}).`;
 	return {
 		schema: "kleros-reputation-oracle/v1",
 		agentRegistry: `eip155:${params.chainId}:${AGENT_REGISTRY_ADDRESS}`,
@@ -57,6 +62,7 @@ export function buildNegativeEvidence(params: NegativeEvidenceParams): EvidenceJ
 		valueDecimals: 0,
 		tag1: "removed",
 		tag2: "kleros-agent-registry",
+		text,
 		kleros: {
 			pgtcrAddress: params.pgtcrAddress,
 			pgtcrItemId: params.pgtcrItemId,
