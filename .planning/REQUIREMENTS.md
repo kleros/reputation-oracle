@@ -52,7 +52,7 @@ Deferred to v1.3+. Tracked but not in current roadmap.
 
 ### Bot Ergonomics
 
-- **EVD-01**: Human-readable `text` field in IPFS feedback JSON (handled as `/gsd:quick` outside v1.2)
+- ~~**EVD-01**: Human-readable `text` field in IPFS feedback JSON~~ — Done 2026-04-24 (quick task `260424-1pi`, commit `cdb6c2c`)
 - **IN-02-FIX**: `parseInt(disputeId)` precision fix above 2^53 (advisory from v1.1 code review)
 
 ### Operations
