@@ -66,6 +66,7 @@ Revoke-then-negative (Scenario 2) ensures `getSummary` = -95, not average of (+9
 - Subgraph pagination: `id_gt` cursor, NOT `skip` (degrades >5000). Fetch ALL items incl. Absent.
 - Agent resolution: Strategy A — `metadata.key0` = numeric agentId, `metadata.key2` = CAIP-10 chain validation.
 - Tags: `tag1` = semantic signal (`verified`/`removed`), `tag2` = source identifier (`kleros-agent-registry`).
+- Evidence JSON (off-chain, IPFS): minimal — `schema/agentRegistry/agentId/clientAddress/createdAt/value/valueDecimals/tag1/tag2/text/kleros{}`. **No `title`, no `endpoint`** — non-standard, no 8004 consumer reads them. PRD §13 lists them; PRD predates v1.0, GSD wins. Schema string stays `kleros-reputation-oracle/v1` for additive changes.
 - Router upgradeable via UUPS proxy (OpenZeppelin) with storage gaps for future multi-list/multi-product.
 - Kleros v1 arbitrator on Ethereum. PGTCR list supports CAIP-10 multi-chain item registrations.
 - Re-registration after dispute: history accumulates, no revoke of old negative.
