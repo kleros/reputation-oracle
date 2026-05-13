@@ -45,6 +45,17 @@ function disabledResponse() {
  * @param {{ timeout?: number }} [options={}] - Options (timeout in ms, default 30000)
  * @returns {{ exitCode: number, stdout: string, stderr: string }}
  */
+/**
+ * Frozen enum of typed reason codes for execGraphify failures (#2974).
+ * Tests assert on result.reason instead of grepping stderr text.
+ */
+const GRAPHIFY_REASON = Object.freeze({
+  OK: 'ok',
+  ENOENT: 'graphify_not_found',
+  TIMEOUT: 'graphify_timed_out',
+  EXIT_NONZERO: 'graphify_exit_nonzero',
+});
+
 function execGraphify(cwd, args, options = {}) {
   const timeout = options.timeout ?? 30000;
   const result = childProcess.spawnSync('graphify', args, {
@@ -57,7 +68,12 @@ function execGraphify(cwd, args, options = {}) {
 
   // ENOENT -- graphify binary not found on PATH
   if (result.error && result.error.code === 'ENOENT') {
-    return { exitCode: 127, stdout: '', stderr: 'graphify not found on PATH' };
+    return {
+      exitCode: 127,
+      stdout: '',
+      stderr: 'graphify not found on PATH',
+      reason: GRAPHIFY_REASON.ENOENT,
+    };
   }
 
   // Timeout -- subprocess killed via SIGTERM
@@ -66,13 +82,17 @@ function execGraphify(cwd, args, options = {}) {
       exitCode: 124,
       stdout: (result.stdout ?? '').toString().trim(),
       stderr: 'graphify timed out after ' + timeout + 'ms',
+      reason: GRAPHIFY_REASON.TIMEOUT,
+      timeout_ms: timeout,
     };
   }
 
+  const exitCode = result.status ?? 1;
   return {
-    exitCode: result.status ?? 1,
+    exitCode,
     stdout: (result.stdout ?? '').toString().trim(),
     stderr: (result.stderr ?? '').toString().trim(),
+    reason: exitCode === 0 ? GRAPHIFY_REASON.OK : GRAPHIFY_REASON.EXIT_NONZERO,
   };
 }
 
@@ -102,26 +122,55 @@ function checkGraphifyInstalled() {
 }
 
 /**
- * Detect graphify version via python3 importlib.metadata and check compatibility.
+ * Detect graphify version and check compatibility.
  * Tested range: >=0.4.0,<1.0
+ *
+ * Detection strategy:
+ * 1. Try `graphify --version` (works for most CLI installations, incl. venv installs)
+ * 2. Fall back to python3 importlib.metadata (legacy / system Python path)
+ * 3. Return null version gracefully if both fail
  *
  * @returns {{ version: string|null, compatible: boolean|null, warning: string|null }}
  */
 function checkGraphifyVersion() {
-  const result = childProcess.spawnSync('python3', [
-    '-c',
-    'from importlib.metadata import version; print(version("graphifyy"))',
-  ], {
+  // Strategy 1: try `graphify --version` directly (2s timeout -- fast path)
+  const versionResult = childProcess.spawnSync('graphify', ['--version'], {
     stdio: 'pipe',
     encoding: 'utf-8',
-    timeout: 5000,
+    timeout: 2000,
   });
 
-  if (result.status !== 0 || !result.stdout || !result.stdout.trim()) {
+  let versionStr = null;
+
+  if (!versionResult.error && versionResult.status === 0) {
+    const raw = (versionResult.stdout || '').trim();
+    // graphify --version may emit "graphify 0.4.23" or just "0.4.23"
+    const match = raw.match(/(\d+\.\d+(?:\.\d+)*)/);
+    if (match) {
+      versionStr = match[1];
+    }
+  }
+
+  // Strategy 2: fall back to python3 importlib.metadata
+  if (!versionStr) {
+    const pyResult = childProcess.spawnSync('python3', [
+      '-c',
+      'from importlib.metadata import version; print(version("graphifyy"))',
+    ], {
+      stdio: 'pipe',
+      encoding: 'utf-8',
+      timeout: 5000,
+    });
+
+    if (!pyResult.error && pyResult.status === 0 && pyResult.stdout && pyResult.stdout.trim()) {
+      versionStr = pyResult.stdout.trim();
+    }
+  }
+
+  if (!versionStr) {
     return { version: null, compatible: null, warning: 'Could not determine graphify version' };
   }
 
-  const versionStr = result.stdout.trim();
   const parts = versionStr.split('.').map(Number);
 
   if (parts.length < 2 || parts.some(isNaN)) {
@@ -165,7 +214,7 @@ function buildAdjacencyMap(graph) {
   for (const node of (graph.nodes || [])) {
     adj[node.id] = [];
   }
-  for (const edge of (graph.edges || [])) {
+  for (const edge of (graph.edges || graph.links || [])) {
     if (!adj[edge.source]) adj[edge.source] = [];
     if (!adj[edge.target]) adj[edge.target] = [];
     adj[edge.source].push({ target: edge.target, edge });
@@ -337,7 +386,7 @@ function graphifyStatus(cwd) {
     exists: true,
     last_build: stat.mtime.toISOString(),
     node_count: (graph.nodes || []).length,
-    edge_count: (graph.edges || []).length,
+    edge_count: (graph.edges || graph.links || []).length,
     hyperedge_count: (graph.hyperedges || []).length,
     stale: age > STALE_MS,
     age_hours: Math.round(age / (60 * 60 * 1000)),
@@ -384,8 +433,8 @@ function graphifyDiff(cwd) {
 
   // Diff edges (keyed by source+target+relation)
   const edgeKey = (e) => `${e.source}::${e.target}::${e.relation || e.label || ''}`;
-  const currentEdgeMap = Object.fromEntries((current.edges || []).map(e => [edgeKey(e), e]));
-  const snapshotEdgeMap = Object.fromEntries((snapshot.edges || []).map(e => [edgeKey(e), e]));
+  const currentEdgeMap = Object.fromEntries((current.edges || current.links || []).map(e => [edgeKey(e), e]));
+  const snapshotEdgeMap = Object.fromEntries((snapshot.edges || snapshot.links || []).map(e => [edgeKey(e), e]));
 
   const edgesAdded = Object.keys(currentEdgeMap).filter(k => !snapshotEdgeMap[k]);
   const edgesRemoved = Object.keys(snapshotEdgeMap).filter(k => !currentEdgeMap[k]);
@@ -454,7 +503,7 @@ function writeSnapshot(cwd) {
     version: 1,
     timestamp: new Date().toISOString(),
     nodes: graph.nodes || [],
-    edges: graph.edges || [],
+    edges: graph.edges || graph.links || [],
   };
 
   const snapshotPath = path.join(cwd, '.planning', 'graphs', '.last-build-snapshot.json');
@@ -475,6 +524,7 @@ module.exports = {
   disabledResponse,
   // Subprocess
   execGraphify,
+  GRAPHIFY_REASON,
   // Presence and version
   checkGraphifyInstalled,
   checkGraphifyVersion,
