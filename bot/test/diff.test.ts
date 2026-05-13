@@ -1,6 +1,16 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { computeActions } from "../src/diff.js";
 import { FeedbackType, type ValidatedItem } from "../src/types.js";
+
+// vi.hoisted ensures mockWarn is available inside the vi.mock factory,
+// which is hoisted to the top of the module before any imports are resolved.
+const { mockWarn } = vi.hoisted(() => ({ mockWarn: vi.fn() }));
+
+// Mock the logger module so diff.ts's child logger uses our spy instead of pino.
+vi.mock("../src/logger.js", () => ({
+	createChildLogger: () => ({ warn: mockWarn }),
+	logger: {},
+}));
 
 /** Helper to create a ValidatedItem with sensible defaults */
 function makeItem(overrides: Partial<ValidatedItem> & { agentId: bigint }): ValidatedItem {
@@ -184,6 +194,110 @@ describe("computeActions", () => {
 			if (actions[0].type === "submitPositiveFeedback") {
 				expect(actions[0].pgtcrItemId).toBe("0xdeadbeef");
 			}
+		});
+	});
+
+	// ── Multi-item per agentId (oscillation regression) ──
+
+	describe("Multi-item per agentId (oscillation regression)", () => {
+		// Agent 1436 is the production agent that triggered the oscillation bug.
+		// All tests use agentId 1436n with distinct itemIDs to mirror production state.
+
+		it("R-1: Submitted + Absent/None, routerState=None -> 1 submitPositiveFeedback for live item", () => {
+			// Post-fix expected steady-state after the timer restarts once.
+			const itemA = makeItem({
+				agentId: 1436n,
+				itemID: "0xitemA",
+				pgtcrItemId: "0xitemA",
+				status: "Absent",
+				latestDisputeOutcome: null,
+			});
+			const itemB = makeItem({ agentId: 1436n, itemID: "0xitemB", pgtcrItemId: "0xitemB", status: "Submitted" });
+			const routerStates = new Map<bigint, FeedbackType>();
+
+			const actions = computeActions([itemB, itemA], routerStates);
+
+			expect(actions).toHaveLength(1);
+			expect(actions[0].type).toBe("submitPositiveFeedback");
+			expect(actions[0].agentId).toBe(1436n);
+			if (actions[0].type === "submitPositiveFeedback") {
+				expect(actions[0].pgtcrItemId).toBe("0xitemB");
+			}
+		});
+
+		it("R-2: Submitted + Absent/None, routerState=Positive -> 0 actions (steady state)", () => {
+			// No action needed on subsequent runs once Router is already Positive.
+			const itemA = makeItem({
+				agentId: 1436n,
+				itemID: "0xitemA",
+				pgtcrItemId: "0xitemA",
+				status: "Absent",
+				latestDisputeOutcome: null,
+			});
+			const itemB = makeItem({ agentId: 1436n, itemID: "0xitemB", pgtcrItemId: "0xitemB", status: "Submitted" });
+			const routerStates = new Map<bigint, FeedbackType>([[1436n, FeedbackType.Positive]]);
+
+			const actions = computeActions([itemB, itemA], routerStates);
+
+			expect(actions).toHaveLength(0);
+		});
+
+		it("R-3: Submitted + Absent/Reject, routerState=None -> 1 submitPositiveFeedback + race-detector warn", () => {
+			// Live item wins; race-detector warn log must fire; -95 is NOT posted.
+			mockWarn.mockClear();
+			const itemB = makeItem({ agentId: 1436n, itemID: "0xitemB", pgtcrItemId: "0xitemB", status: "Submitted" });
+			const itemC = makeItem({
+				agentId: 1436n,
+				itemID: "0xitemC",
+				pgtcrItemId: "0xitemC",
+				status: "Absent",
+				latestDisputeOutcome: "Reject",
+			});
+			const routerStates = new Map<bigint, FeedbackType>();
+
+			const actions = computeActions([itemB, itemC], routerStates);
+
+			expect(actions).toHaveLength(1);
+			expect(actions[0].type).toBe("submitPositiveFeedback");
+			expect(actions[0].agentId).toBe(1436n);
+			expect(mockWarn).toHaveBeenCalledWith(
+				expect.objectContaining({ agentId: expect.any(String) }),
+				"reject+resubmit race detected, -95 not posted",
+			);
+		});
+
+		it("R-4: Absent/None only, routerState=Positive -> 1 revokeOnly (Scenario 3 preserved)", () => {
+			const itemA = makeItem({
+				agentId: 1436n,
+				itemID: "0xitemA",
+				pgtcrItemId: "0xitemA",
+				status: "Absent",
+				latestDisputeOutcome: null,
+			});
+			const routerStates = new Map<bigint, FeedbackType>([[1436n, FeedbackType.Positive]]);
+
+			const actions = computeActions([itemA], routerStates);
+
+			expect(actions).toHaveLength(1);
+			expect(actions[0].type).toBe("revokeOnly");
+			expect(actions[0].agentId).toBe(1436n);
+		});
+
+		it("R-5: Absent/Reject only, routerState=Positive -> 1 submitNegativeFeedback (Scenario 2 preserved)", () => {
+			const itemC = makeItem({
+				agentId: 1436n,
+				itemID: "0xitemC",
+				pgtcrItemId: "0xitemC",
+				status: "Absent",
+				latestDisputeOutcome: "Reject",
+			});
+			const routerStates = new Map<bigint, FeedbackType>([[1436n, FeedbackType.Positive]]);
+
+			const actions = computeActions([itemC], routerStates);
+
+			expect(actions).toHaveLength(1);
+			expect(actions[0].type).toBe("submitNegativeFeedback");
+			expect(actions[0].agentId).toBe(1436n);
 		});
 	});
 });
