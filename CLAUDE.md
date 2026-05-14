@@ -49,6 +49,8 @@ Router is the `clientAddress` for 8004 ReputationRegistry. Bot NEVER calls Reput
 
 Revoke-then-negative (Scenario 2) ensures `getSummary` = -95, not average of (+95,-95) = 0.
 
+**Per-agentId invariant (load-bearing — see [`MULTIPLE_ITEMS_SAME_AGENT_1436_BUG.md`](./MULTIPLE_ITEMS_SAME_AGENT_1436_BUG.md)):** `computeActions()` MUST emit at most ONE action per agentId per run. Group items by `agentId` first, then decide. Do NOT iterate items independently — the same agentId can have multiple PGTCR items (one Absent from a failed first attempt + one Submitted from a re-registration), and the Router has no per-itemId memory (`feedbackType[agentId]` is the only key). Per-item iteration over the same agentId caused the agent-1436 incident: ~400 oscillating revoke/positive txs over 17 hours. Live items (Submitted/Reincluded) win; Absent items in the same group are historical and ignored. The `reject+resubmit race detected` warn log fires when an Absent/Reject co-exists with a live item — that signal triggers revisit of the deferred handling path (see `OPEN_QUESTIONS.md`).
+
 ## Don't do
 
 - **No local DB/persistence.** No SQLite, no files, no checkpoints. Stateless diff engine.
@@ -82,6 +84,7 @@ Revoke-then-negative (Scenario 2) ensures `getSummary` = -95, not average of (+9
 - **Differentiated failure policy:** `executeActions` returns `ExecuteActionsResult` (never throws for classified errors). Item-specific failures (gas revert, submission revert, receipt revert, gas exhausted) → skip + continue. Systemic failures (receipt timeout/null, non-revert submission error, balance below threshold) → return `systemicFailure` reason, `index.ts` exits 1. See `bot/src/chain.ts` and `.planning/phases/05-transaction-safety/05-CONTEXT.md` D-01..D-20 for the full taxonomy.
 - **`writeContract` is NEVER retried.** Retries on submission create duplicate txs with different nonces. Gas estimation retries are capped at 3 attempts and only for transient (not revert) errors.
 - **Signal handlers set a flag, never call `process.exit`:** SIGTERM/SIGINT set `shutdownHolder.shutdown = true`. Main loop checks between actions. `process.exit` only inside `flushAndExit`'s pino callback.
+- **Fetch error-body parsing: text first, JSON.parse second.** Never `response.json()` with `response.text()` as fallback — `json()` consumes the stream and the catch's `text()` finds it locked, yielding silent `(unreadable body)` logs. Pattern: `const raw = await response.text().catch(() => "")` → check empty → `try { JSON.parse(raw) } catch { errorBody = raw }`. Also: when parsing structured error shapes like Pinata's `{error:{reason,details}}`, type-check before stringifying (`typeof e === "object"` → join fields explicitly) — otherwise `error ?? JSON.stringify(json)` coerces an object to `[object Object]`. The Pinata parser at `bot/src/ipfs.ts` is the canonical implementation. Incident: weeks of `Pinata 403: (unreadable body)` logs hid the real `Account blocked due to plan usage limit` message — quick task `260514-1j6` fixed both bugs.
 
 ## Subgraph endpoints
 
