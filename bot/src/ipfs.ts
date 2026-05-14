@@ -79,12 +79,25 @@ export async function uploadEvidenceToIPFS(
 
 			if (!response.ok) {
 				const errorClass = classifyHttpStatus(response.status);
-				let errorBody = "(non-JSON body)";
-				try {
-					const json = (await response.json()) as { error?: string };
-					errorBody = (json.error ?? JSON.stringify(json)).slice(0, 500);
-				} catch {
-					errorBody = (await response.text().catch(() => "(unreadable body)")).slice(0, 500);
+				let errorBody: string;
+				const raw = await response.text().catch(() => "");
+				if (raw === "") {
+					errorBody = "(empty body)";
+				} else {
+					try {
+						const json = JSON.parse(raw) as { error?: unknown };
+						const e = json.error;
+						if (e && typeof e === "object" && !Array.isArray(e)) {
+							const nested = e as { reason?: string; details?: string };
+							errorBody = [nested.reason, nested.details].filter(Boolean).join(": ").slice(0, 500) || raw.slice(0, 500);
+						} else if (typeof e === "string") {
+							errorBody = e.slice(0, 500);
+						} else {
+							errorBody = raw.slice(0, 500);
+						}
+					} catch {
+						errorBody = raw.slice(0, 500);
+					}
 				}
 				const err = Object.assign(new Error(`Pinata ${response.status}: ${errorBody}`), { errorClass });
 				throw err;

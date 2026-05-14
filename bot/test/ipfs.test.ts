@@ -15,12 +15,11 @@ function makeSuccessResponse(ipfsHash = "QmTestHash123", isDuplicate = false): R
 	} as unknown as Response;
 }
 
-function makeErrorResponse(status: number, body: { error?: string } = { error: "test error" }): Response {
+function makeErrorResponse(status: number, rawBody = '{"error":"test error"}'): Response {
 	return {
 		ok: false,
 		status,
-		json: async () => body,
-		text: async () => JSON.stringify(body),
+		text: async () => rawBody,
 	} as unknown as Response;
 }
 
@@ -201,5 +200,43 @@ describe("uploadEvidenceToIPFS", () => {
 			vi.runAllTimersAsync(),
 		]);
 		expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+	});
+
+	it("extracts reason+details from Pinata structured error {error:{reason,details}} (Test 11)", async () => {
+		const body = JSON.stringify({ error: { reason: "FORBIDDEN", details: "Account blocked due to plan usage limit" } });
+		vi.mocked(globalThis.fetch).mockResolvedValueOnce(makeErrorResponse(403, body));
+		await Promise.all([
+			expect(uploadEvidenceToIPFS(mockEvidence, mockMetadata, "test-jwt", 5000)).rejects.toMatchObject({
+				message: expect.stringContaining("FORBIDDEN"),
+				errorClass: "auth",
+			}),
+			vi.runAllTimersAsync(),
+		]);
+	});
+
+	it("preserves raw text for non-JSON body (HTML error page) (Test 12)", async () => {
+		vi.mocked(globalThis.fetch)
+			.mockResolvedValueOnce(makeErrorResponse(503, "Service Unavailable"))
+			.mockResolvedValueOnce(makeErrorResponse(503, "Service Unavailable"));
+		await Promise.all([
+			expect(uploadEvidenceToIPFS(mockEvidence, mockMetadata, "test-jwt", 5000)).rejects.toMatchObject({
+				message: expect.stringContaining("Service Unavailable"),
+				errorClass: "server",
+			}),
+			vi.runAllTimersAsync(),
+		]);
+	});
+
+	it("reports (empty body) when response body is empty (Test 13)", async () => {
+		vi.mocked(globalThis.fetch)
+			.mockResolvedValueOnce(makeErrorResponse(500, ""))
+			.mockResolvedValueOnce(makeErrorResponse(500, ""));
+		await Promise.all([
+			expect(uploadEvidenceToIPFS(mockEvidence, mockMetadata, "test-jwt", 5000)).rejects.toMatchObject({
+				message: expect.stringContaining("(empty body)"),
+				errorClass: "server",
+			}),
+			vi.runAllTimersAsync(),
+		]);
 	});
 });
