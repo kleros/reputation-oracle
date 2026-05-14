@@ -29,7 +29,7 @@ Milestone: v1.2 — Deploy-to-Mainnet
 Phase: 07 COMPLETE (code + live-VPS UAT 5/5 passed 2026-04-23); Phase 08 code complete, live-Betterstack UAT pending
 Plan: Phase 08 — 6/6 plans done; 4 live-infra items in 08-HUMAN-UAT
 Status: Awaiting Betterstack burn-in (7-day) then Phase 9 Mainnet
-Last activity: 2026-05-13 — Completed quick task 260513-x0m: Fix multi-item-per-agentId oscillation in bot diff engine
+Last activity: 2026-05-14 — Completed quick task 260514-1j6: Fix consumed-stream bug in Pinata error-body parser
 
 Progress: [████████████████████] 100% (Phase 7 fully closed)
 
@@ -124,6 +124,7 @@ None.
 | 260424-1pi | EVD-01: human-readable text field in IPFS feedback JSON | 2026-04-24 | cdb6c2c | Complete | [260424-1pi-evd-01-human-readable-text-field-in-ipfs](./quick/260424-1pi-evd-01-human-readable-text-field-in-ipfs/) |
 | 260424-23x | Correct VPS OS to Ubuntu 22.04 in docs | 2026-04-24 | 6be579c | Complete | [260424-23x-correct-vps-os-to-ubuntu-22-04-in-docs](./quick/260424-23x-correct-vps-os-to-ubuntu-22-04-in-docs/) |
 | 260513-x0m | Fix multi-item-per-agentId oscillation in bot diff engine (incident: agent 1436 ~400 txs) | 2026-05-13 | cf5f3b6 | Complete | [260513-x0m-fix-multi-item-per-agentid-oscillation-i](./quick/260513-x0m-fix-multi-item-per-agentid-oscillation-i/) |
+| 260514-1j6 | Fix consumed-stream bug in Pinata error-body parser (root cause of weeks of `(unreadable body)` logs — Pinata "Account blocked due to plan usage limit") | 2026-05-14 | c661dc5 | Complete | [260514-1j6-fix-the-body-reading-bug-in-bot-src-ipfs](./quick/260514-1j6-fix-the-body-reading-bug-in-bot-src-ipfs/) |
 
 ## Session Continuity
 
